@@ -1,0 +1,3 @@
+Currently work in progress. 
+Will eventually work together with an ICSP bit banging driver to allow processors running embedded linux to read and program PIC devices (who support low voltage programming and have their PGM, MCLR, PGD, PGC pins connected to the processor's GPIOs). 
+
