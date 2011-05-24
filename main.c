@@ -149,7 +149,61 @@ int lpicp_main_parse_args_to_config(int argc, char *argv[], struct lpicp_config_
 /* parse arguments to configuration */
 int lpicp_main_execute_config(struct lpicp_config_t *config)
 {
-	return 0;
+	struct lpp_context_t context;
+	int ret;
+
+	/* assume no error */
+	ret = 0;
+
+	/* try to init context */
+	if (lpp_context_init(&context, config->dev_name))
+	{
+		/* init log if verbose */
+		if (config->verbose)
+		{
+			/* try to init log */
+			if (!lpp_log_init(&context, 512))
+			{
+				/* set err */
+				ret = 1;
+
+				/* error */
+				goto err_log_init;
+			}
+		}
+
+		/* read? */
+		if (config->opmode == LPICP_OPMODE_READ)
+		{
+		}
+		/* write */
+		else if (config->opmode == LPICP_OPMODE_WRITE)
+		{
+		}
+
+		/* print log if verbose */
+		if (config->verbose)
+		{
+			/* print the log */
+			lpp_log_print(&context);
+
+			/* and release it */
+			lpp_log_destroy(&context);
+		}
+	}
+	else
+	{
+		/* set err */
+		ret = 1;
+
+		/* error */
+		goto err_init_context;
+	}
+
+err_log_init:
+	lpp_context_destroy(&context);
+err_init_context:
+	return ret;
 }
 
 /* entry */
@@ -175,28 +229,3 @@ int main(int argc, char *argv[])
 	return ret;
 }
 
-#if 0
-
-struct lpp_context_t context;
-	unsigned short device_id;
-
-
-
-
-	/* try to init context */
-	if (lpp_context_init(&context, "/dev/icsp0") && 
-		lpp_log_init(&context, 512))
-	{
-		/* do something */
-		/* lpp_bulk_erase(&context); */
-		lpp_device_id_read(&context, &device_id);
-
-		/* print log */
-		lpp_log_print(&context);
-
-		/* destroy context */
-		lpp_log_destroy(&context);
-		lpp_context_destroy(&context);
-	}
-
-#endif
