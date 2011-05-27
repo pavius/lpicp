@@ -71,6 +71,9 @@ void lpp_log_print(struct lpp_context_t *context)
 				cmd_string,
 				context->log_records[record_idx].data);
 	}
+
+	/* flush stdout */
+	fflush(stdout);
 }
 
 /* log a command */

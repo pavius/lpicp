@@ -104,3 +104,18 @@ int lpp_icsp_read_8(struct lpp_context_t *context,
 	return ret;
 }
 
+/* perform programming nop */
+int lpp_icsp_prog_nop(struct lpp_context_t *context)
+{
+	unsigned int xfer_command = 0;
+	int ret;
+
+	/* rx */
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_PROG_NOP, 0) == 0);
+
+	/* log as a nop, if applicable */
+	lpp_log_command(context, 0, 0);
+
+	/* return result */
+	return ret;
+}

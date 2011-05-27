@@ -34,5 +34,8 @@ int lpp_icsp_read_8(struct lpp_context_t *context,
 					const unsigned char command, 
 					unsigned char *data);
 
+/* perform programming nop */
+int lpp_icsp_prog_nop(struct lpp_context_t *context);
+
 #endif /* __LPICPC_ICSP_H */
 

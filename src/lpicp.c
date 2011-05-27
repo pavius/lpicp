@@ -13,6 +13,7 @@
 #include "lpicp.h"
 #include "lpicp_log.h"
 #include "lpicp_icsp.h"
+#include "lpicp_image.h"
 #include <string.h>
 
 /* remove */ 
@@ -108,3 +109,50 @@ int lpp_device_id_read(struct lpp_context_t *context, unsigned short *device_id)
 	return lpp_read_16(context, 0x3FFFFE, device_id);
 }
 
+/* write an image to the device */
+int lpp_image_write(struct lpp_context_t *context, struct lpp_image_t *image)
+{
+	int ret;
+	unsigned int words_left, words_to_write, word_index;
+	const unsigned int write_buffer_size_in_words = 16;
+	unsigned short current_address, *current_data;
+
+	/* start programming */
+	ret = lpp_icsp_write_16(context, LPP_ICSP_CMD_CORE_INST, LPP_SET_EEPGD)	&& 
+			lpp_icsp_write_16(context, LPP_ICSP_CMD_CORE_INST, LPP_CLR_CFGS);
+
+	/* point to start data */
+	current_data = (unsigned short *)image->contents;
+
+	/* the amount of words left to write is (bytes / 2) + 1 if odd number of bytes */
+	words_left = (image->contents_size >> 1);
+	words_left += (image->contents_size & 0x1) ? 1 : 0;
+
+	/* while there are bytes left to write */
+	for (current_address = 0; words_left && ret; words_left -= words_to_write)
+	{
+		/* do we have enough data to fill a buffer? if not, just write whatever's left */
+		words_to_write = (write_buffer_size_in_words < words_left) ? 
+							write_buffer_size_in_words : words_left;
+
+		/* set the current address */
+		ret = lpp_tblptr_set(context, current_address);
+
+		/* fill the write buffer and write it */
+		for (word_index = 0; (word_index < words_to_write) && ret; ++word_index, current_address += 2)
+		{ 
+			/* we don't increment the tblptr on the last word, so says the progspec */
+			unsigned char command = (word_index != (words_to_write - 1)) ? 
+										LPP_ICSP_CMD_TBL_WR_POST_INC_2 : LPP_ICSP_CMD_TBL_WR_PROG;
+
+			/* set address and write data */
+			ret = lpp_icsp_write_16(context, command, *current_data++);
+		}
+
+		/* perform the special nop procedure after programming */
+		if (ret) lpp_icsp_prog_nop(context);
+	}
+
+	/* return the result */
+	return ret;
+}

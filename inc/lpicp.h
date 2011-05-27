@@ -22,6 +22,8 @@
 #define LPP_OP_MOVLW(value)				((0x0E << 8) | (value))
 #define LPP_OP_MOVWF(register_address)	((0x6E << 8) | (register_address))
 #define LPP_OP_NOP						(0x0)
+#define LPP_SET_EEPGD					(0x8EA6)
+#define LPP_CLR_CFGS					(0x9CA6)
 
 /* ICSP commands */
 #define LPP_ICSP_CMD_CORE_INST				(0x0) // 0000
