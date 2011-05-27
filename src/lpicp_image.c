@@ -156,3 +156,10 @@ err_alloc_open_file:
 	return 0;	
 }
 
+/* write the image to file */
+int lpp_image_write_to_file(struct lpp_context_t *context, 
+							 struct lpp_image_t *image, 
+							 const char *file_name)
+{
+	/* TODO */
+}

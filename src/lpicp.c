@@ -15,6 +15,7 @@
 #include "lpicp_icsp.h"
 #include "lpicp_image.h"
 #include <string.h>
+#include <stdlib.h>
 
 /* remove */ 
 #define usleep(x) 
@@ -110,7 +111,7 @@ int lpp_device_id_read(struct lpp_context_t *context, unsigned short *device_id)
 }
 
 /* write an image to the device */
-int lpp_image_write(struct lpp_context_t *context, struct lpp_image_t *image)
+int lpp_program_image_to_device(struct lpp_context_t *context, struct lpp_image_t *image)
 {
 	int ret;
 	unsigned int words_left, words_to_write, word_index;
@@ -125,8 +126,7 @@ int lpp_image_write(struct lpp_context_t *context, struct lpp_image_t *image)
 	current_data = (unsigned short *)image->contents;
 
 	/* the amount of words left to write is (bytes / 2) + 1 if odd number of bytes */
-	words_left = (image->contents_size >> 1);
-	words_left += (image->contents_size & 0x1) ? 1 : 0;
+	lpp_image_get_content_size_in_words(image, &words_left);
 
 	/* while there are bytes left to write */
 	for (current_address = 0; words_left && ret; words_left -= words_to_write)
@@ -156,3 +156,57 @@ int lpp_image_write(struct lpp_context_t *context, struct lpp_image_t *image)
 	/* return the result */
 	return ret;
 }
+
+/* read the image from the device */
+int lpp_read_device_to_image(struct lpp_context_t *context, 
+							 const unsigned int offset,
+							 const unsigned int size_in_bytes,
+							 struct lpp_image_t *image)
+{
+	unsigned char *current_position;
+	unsigned int bytes_left, ret;
+
+	/* success by default */
+	ret = 1;
+
+	/* allocate space */
+	image->contents = malloc(size_in_bytes);
+
+	/* if failed, exit */
+	if (image->contents != NULL)
+	{
+		/* init buffer */
+		memset(image->contents, 0xFF, size_in_bytes);
+
+		/* point to start of buffer */
+		current_position = image->contents;
+
+		/* save the size */
+		image->contents_size = image->max_contents_size = size_in_bytes;
+
+		/* set the current address */
+		ret = lpp_tblptr_set(context, offset);
+
+		/* start reading */
+		for (bytes_left = size_in_bytes; 
+			  bytes_left && ret; 
+			  --bytes_left, ++current_position)
+		{
+			/* read the data */
+			ret = lpp_icsp_read_8(context, LPP_ICSP_CMD_TBL_RD_POST_INC, current_position);
+		}
+	}
+	
+	/* if failed, free the memory */
+	if (ret == 0)
+	{
+		/* deallocate image and clear flags */
+		free(image->contents);
+		image->contents = NULL;
+		image->contents_size = 0;
+	}
+
+	/* done */
+	return ret;
+}
+

@@ -29,5 +29,10 @@ int lpp_image_read_from_file(struct lpp_context_t *context,
 							 const char *file_name,
 							 const unsigned int max_image_size);
 
+/* get image size in words */
+#define lpp_image_get_content_size_in_words(image, size_in_words)	\
+		*size_in_words = (image->contents_size >> 1);				\
+		*size_in_words += (image->contents_size & 0x1) ? 1 : 0;
+
 #endif /* __LPICPC_IMAGE_H */
 

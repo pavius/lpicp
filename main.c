@@ -210,7 +210,21 @@ int lpicp_main_execute_config(struct lpicp_config_t *config)
 		/* read */
 		if (config->opmode == LPICP_OPMODE_READ)
 		{
+			/* try to read the image */
+			if (lpp_read_device_to_image(&context, 0, 64 * 1024, &image) &&
+				lpp_image_write_to_file(&context, &image, config->file_name))
+			{
+				/* done */
+			}
+			else
+			{
+				/* error writing file */
+				printf("Error reading file from device\n");
+				ret = 0;
 
+				/* skip to end */
+				goto err_executing_command;
+			}
 		}
 		/* write */
 		else if (config->opmode == LPICP_OPMODE_WRITE)
@@ -219,7 +233,7 @@ int lpicp_main_execute_config(struct lpicp_config_t *config)
 			if (lpp_image_read_from_file(&context, &image, config->file_name, 64 * 1024))
 			{
 				/* write the file to the pic */
-				lpp_image_write(&context, &image);
+				lpp_program_image_to_device(&context, &image);
 			}
 			else
 			{
@@ -237,7 +251,12 @@ int lpicp_main_execute_config(struct lpicp_config_t *config)
 			unsigned short device_id = 0;
 
 			/* try to get device id */
-			if (!lpp_device_id_read(&context, &device_id))
+			if (lpp_device_id_read(&context, &device_id))
+			{
+				/* print device-id */
+				printf("Device ID: %02X.%02X\n", ((device_id >> 8) & 0xFF), (device_id & 0xFF));
+			}
+			else
 			{
 				/* error reading dev id */
 				printf("Error reading device ID\n");

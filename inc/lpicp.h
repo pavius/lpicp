@@ -13,6 +13,9 @@
 #ifndef __LPICPC_H
 #define __LPICPC_H
 
+/* forward declare */
+struct lpp_image_t;
+
 /* PIC registers */
 #define LPP_REG_TBLPTRU (0xF8)
 #define LPP_REG_TBLPTRH (0xF7)
@@ -59,5 +62,15 @@ int lpp_bulk_erase(struct lpp_context_t *context);
 
 /* read device id */
 int lpp_device_id_read(struct lpp_context_t *context, unsigned short *device_id);
+
+/* write an image to the device */
+int lpp_program_image_to_device(struct lpp_context_t *context, struct lpp_image_t *image);
+
+/* read the image from the device */
+int lpp_read_device_to_image(struct lpp_context_t *context, 
+							 const unsigned int offset,
+							 const unsigned int size_in_bytes,
+							 struct lpp_image_t *image);
+
 
 #endif /* __LPICPC_H */
