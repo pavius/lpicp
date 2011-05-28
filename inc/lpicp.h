@@ -28,7 +28,9 @@ struct lpp_image_t;
 #define LPP_OP_MOVWF(register_address)	((0x6E << 8) | (register_address))
 #define LPP_OP_NOP						(0x0)
 #define LPP_SET_EEPGD					(0x8EA6)
+#define LPP_SET_CFGS					(0x8CA6)
 #define LPP_CLR_CFGS					(0x9CA6)
+#define LPP_SET_WREN					(0x86A6)
 
 /* ICSP commands */
 #define LPP_ICSP_CMD_CORE_INST				(0x0) // 0000

@@ -20,8 +20,14 @@ struct lpp_image_t;
 /* operations */
 struct lpp_device_t
 {
+	/* callbacks */ 
 	int (*bulk_erase)(struct lpp_context_t *);
 	int (*image_to_device)(struct lpp_context_t *, struct lpp_image_t *);
+	int (*code_write_start)(struct lpp_context_t *);
+	int (*config_write_start)(struct lpp_context_t *);
+
+	/* vars */
+	unsigned int code_words_per_write;
 };
 
 /* families of devices */

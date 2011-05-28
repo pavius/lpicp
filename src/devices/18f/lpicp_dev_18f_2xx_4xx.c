@@ -47,16 +47,43 @@ int lpp_device_18f2xx_4xx_bulk_erase(struct lpp_context_t *context)
 	return 0;
 }
 
+/* start writing to code memory */
+int lpp_device_18f2xx_4xx_code_write_start(struct lpp_context_t *context)
+{
+	/* start programming */
+	return lpp_exec_instruction(context, LPP_SET_EEPGD)	&& 
+			lpp_exec_instruction(context, LPP_CLR_CFGS);
+}
+
+/* start writing to config memory */
+int lpp_device_18f2xx_4xx_config_write_start(struct lpp_context_t *context)
+{
+	/* start programming */
+	return lpp_exec_instruction(context, LPP_SET_EEPGD)	&&
+			lpp_exec_instruction(context, LPP_SET_CFGS) &&
+			lpp_exec_instruction(context, LPP_SET_WREN);
+}
+
 /* burn the image to the device */
 int lpp_device_18f2xx_4xx_image_to_device(struct lpp_context_t *context, 
 										  struct lpp_image_t *image)
 {
+	/* start by disabling multipanel writes */
+	if (lpp_device_18f2xx_4xx_config_write_start(context) &&
+		lpp_write_16(context, 0x3C0006, 0x0000))
+	{
+		/* re-use 2xxx_4xxx method */
+		return (lpp_device_18f2xxx_4xxx_image_to_device(context, image));
+	}
 }
 
 /* operations */
 struct lpp_device_t lpp_device_18f2xx_4xx = 
 {
-	.bulk_erase 		= lpp_device_18f2xx_4xx_bulk_erase,
-	.image_to_device 	= lpp_device_18f2xx_4xx_image_to_device
+	.bulk_erase 			= lpp_device_18f2xx_4xx_bulk_erase,
+	.image_to_device 		= lpp_device_18f2xx_4xx_image_to_device,
+	.code_write_start		= lpp_device_18f2xx_4xx_code_write_start,
+	.config_write_start		= lpp_device_18f2xx_4xx_config_write_start,
+	.code_words_per_write	= 4
 };
 
