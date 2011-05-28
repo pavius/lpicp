@@ -14,6 +14,7 @@
 #define __LPICPC_ICSP_H
 
 #include "lpicp.h"
+#include <linux/mc_icsp.h>
 
 /* number of bits in command */
 #define LPP_COMMAND_BIT_COUNT (4)
@@ -35,7 +36,8 @@ int lpp_icsp_read_8(struct lpp_context_t *context,
 					unsigned char *data);
 
 /* perform programming nop */
-int lpp_icsp_prog_nop(struct lpp_context_t *context);
+int lpp_icsp_command_only(struct lpp_context_t *context, 
+						  const struct mc_icsp_cmd_only_t *cmd_config);
 
 #endif /* __LPICPC_ICSP_H */
 

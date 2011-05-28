@@ -13,6 +13,8 @@
 #ifndef __LPICPC_H
 #define __LPICPC_H
 
+#include "lpicp_device.h"
+
 /* forward declare */
 struct lpp_image_t;
 
@@ -48,10 +50,12 @@ struct lpp_context_t
 	unsigned int				log_current_idx;
 	char						*icsp_dev_name;
 	int							icsp_dev_file;
+	struct lpp_device_t			*device;
 };
 
 /* initialize a context */
 int lpp_context_init(struct lpp_context_t *context, 
+					 const enum lpp_device_family_e family,
 					 char *icsp_dev_name);
 
 /* destroy a context */
@@ -72,5 +76,22 @@ int lpp_read_device_to_image(struct lpp_context_t *context,
 							 const unsigned int size_in_bytes,
 							 struct lpp_image_t *image);
 
+/* execute an instruction */
+int lpp_exec_instruction(struct lpp_context_t *context,
+						 const unsigned short instuction);
+
+/* write 16 bits of data to a specified address */
+int lpp_write_16(struct lpp_context_t *context,
+				 const unsigned int address,
+				 const unsigned short data);
+
+/* read 16 bits of data from a specified address */
+int lpp_read_16(struct lpp_context_t *context,
+				 const unsigned int address,
+				 unsigned short *data);
+
+/* set tbpltr register */
+int lpp_tblptr_set(struct lpp_context_t *context,
+				   const unsigned int value);
 
 #endif /* __LPICPC_H */

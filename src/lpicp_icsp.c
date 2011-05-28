@@ -13,9 +13,11 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <linux/mc_icsp.h>
 #include "lpicp_icsp.h"
 #include "lpicp_log.h"
+
+/* simulate. TODO: proper */
+/* #define ioctl(x, y, z) (0) */
 
 /* open access to driver */
 int lpp_icsp_init(struct lpp_context_t *context, char *icsp_dev_name)
@@ -77,7 +79,7 @@ int lpp_icsp_write_16(struct lpp_context_t *context,
 	MC_ICSP_ENCODE_XFER(command, data, xfer_command);
 
 	/* tx */
-	return (ioctl(context->icsp_dev_file, MC_ICSP_IOC_TX, &xfer_command) == 0);
+	return (ioctl(context->icsp_dev_file, MC_ICSP_IOC_TX, xfer_command) == 0);
 }
 
 /* Read 8 bits via ICSP driver */
@@ -105,16 +107,16 @@ int lpp_icsp_read_8(struct lpp_context_t *context,
 }
 
 /* perform programming nop */
-int lpp_icsp_prog_nop(struct lpp_context_t *context)
+int lpp_icsp_command_only(struct lpp_context_t *context, 
+						  const struct mc_icsp_cmd_only_t *cmd_config)
 {
-	unsigned int xfer_command = 0;
 	int ret;
 
-	/* rx */
-	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_PROG_NOP, 0) == 0);
+	/*  */
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_CMD_ONLY, cmd_config) == 0);
 
 	/* log as a nop, if applicable */
-	lpp_log_command(context, 0, 0);
+	if (ret) lpp_log_command(context, 0, 0);
 
 	/* return result */
 	return ret;

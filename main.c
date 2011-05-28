@@ -27,10 +27,11 @@ enum lpicp_opmode_t
 	LPICP_OPMODE_READ,
 	LPICP_OPMODE_WRITE,
 	LPICP_OPMODE_GET_DEVID,
+	LPICP_OPMODE_ERASE_DEVICE
 };
 
 /* running configuration */
-struct lpicp_config_t
+struct lpp_config_t
 {
 	int verbose;
 	char *dev_name;
@@ -40,7 +41,7 @@ struct lpicp_config_t
 };
 
 /* initialize default configuration */
-void lpicp_main_init_default_config(struct lpicp_config_t *config)
+void lpicp_main_init_default_config(struct lpp_config_t *config)
 {
 	config->verbose = 0;
 	config->dev_name = NULL;
@@ -54,7 +55,7 @@ void lpicp_main_usage(void)
 {
 	printf("Linux PIC Programmer v.%s\n", version_string);
 	printf("Usage: lpicp [options]\n");
-	printf("  -x, --exec            (r, read) or (w, write) or (devid) \n");
+	printf("  -x, --exec            r, read | w, write | e, erase | devid\n");
 	printf("  -d, --dev             ICSP device name (e.g. /dev/icsp0)\n");
 	printf("  -f, --file            Path to Intel HEX file\n");
 	printf("  -o, --offset          Read from offset, Write to offset\n");
@@ -64,7 +65,7 @@ void lpicp_main_usage(void)
 }
 
 /* parse arguments to configuration */
-int lpicp_main_parse_args_to_config(int argc, char *argv[], struct lpicp_config_t *config)
+int lpicp_main_parse_args_to_config(int argc, char *argv[], struct lpp_config_t *config)
 {
 	/* iterate over options */ 
 	while (1)
@@ -125,6 +126,12 @@ int lpicp_main_parse_args_to_config(int argc, char *argv[], struct lpicp_config_
 					/* set mode */
 					config->opmode = LPICP_OPMODE_WRITE;
 				}
+				/* erase? */
+				else if (strcmp(optarg, "erase") == 0 || strcmp(optarg, "e") == 0)
+				{
+					/* set mode */
+					config->opmode = LPICP_OPMODE_ERASE_DEVICE;
+				}
 				/* get device? */
 				else if (strcmp(optarg, "devid") == 0)
 				{
@@ -180,18 +187,107 @@ int lpicp_main_parse_args_to_config(int argc, char *argv[], struct lpicp_config_
 	return 1;
 }
 
+/* do read device id */
+int lpicp_main_execute_read_devid(struct lpp_context_t *context, 
+								  struct lpp_config_t *config)
+{
+	unsigned short device_id = 0;
+
+	/* try to get device id */
+	if (lpp_device_id_read(context, &device_id))
+	{
+		/* print device-id */
+		printf("Device ID: %02X.%02X\n", ((device_id >> 8) & 0xFF), (device_id & 0xFF));
+
+		/* success */
+		return 1;
+	}
+	else
+	{
+		/* error reading dev id */
+		printf("Error reading device ID\n");
+
+		/* error */
+		return 0;
+	}
+}
+
+/* do erase device */
+int lpicp_main_execute_erase_device(struct lpp_context_t *context, 
+									struct lpp_config_t *config)
+{
+	/* read the file */
+	if (lpp_bulk_erase(context))
+	{
+		/* success */
+		return 1;
+	}
+	else
+	{
+		/* error writing file */
+		printf("Error erasing device\n");
+
+		/* error */
+		return 0;
+	}
+}
+
+/* do write */
+int lpicp_main_execute_image_write(struct lpp_context_t *context, 
+								   struct lpp_config_t *config)
+{
+	struct lpp_image_t image;
+
+	/* read the file and write to device */
+	if (lpp_image_read_from_file(context, &image, config->file_name, 64 * 1024) && 
+		lpp_program_image_to_device(context, &image))
+	{
+		/* success */
+		return 1;
+	}
+	else
+	{
+		/* error writing file */
+		printf("Error writing file\n");
+
+		/* error */
+		return 0;
+	}
+}
+
+/* do read */
+int lpicp_main_execute_image_read(struct lpp_context_t *context, 
+								  struct lpp_config_t *config)
+{
+	struct lpp_image_t image;
+
+	/* try to read the image */
+	if (lpp_read_device_to_image(context, 0, 64 * 1024, &image) &&
+		lpp_image_write_to_file(context, &image, config->file_name))
+	{
+		/* success */
+		return 1;
+	}
+	else
+	{
+		/* error writing file */
+		printf("Error reading file from device\n");
+
+		/* error */
+		return 0;
+	}
+}
 /* parse arguments to configuration */
-int lpicp_main_execute_config(struct lpicp_config_t *config)
+int lpicp_main_execute_config(struct lpp_config_t *config)
 {
 	struct lpp_context_t context;
-	struct lpp_image_t image;
 	int ret;
 
 	/* assume no error */
 	ret = 1;
 
 	/* try to init context */
-	if (lpp_context_init(&context, config->dev_name))
+	if (lpp_context_init(&context, LPP_DEVICE_FAMILY_18F, config->dev_name))
 	{
 		/* init log if verbose */
 		if (config->verbose)
@@ -207,71 +303,35 @@ int lpicp_main_execute_config(struct lpicp_config_t *config)
 			}
 		}
 
-		/* read */
-		if (config->opmode == LPICP_OPMODE_READ)
+		/* handle opmode */
+		switch (config->opmode)
 		{
-			/* try to read the image */
-			if (lpp_read_device_to_image(&context, 0, 64 * 1024, &image) &&
-				lpp_image_write_to_file(&context, &image, config->file_name))
-			{
-				/* done */
-			}
-			else
-			{
-				/* error writing file */
-				printf("Error reading file from device\n");
-				ret = 0;
+			/* read image from device and write to file */
+			case LPICP_OPMODE_READ:  
+				ret = lpicp_main_execute_image_read(&context, config); 
+				break;
 
-				/* skip to end */
-				goto err_executing_command;
-			}
-		}
-		/* write */
-		else if (config->opmode == LPICP_OPMODE_WRITE)
-		{
-			/* read the file */
-			if (lpp_image_read_from_file(&context, &image, config->file_name, 64 * 1024))
-			{
-				/* write the file to the pic */
-				lpp_program_image_to_device(&context, &image);
-			}
-			else
-			{
-				/* error writing file */
-				printf("Error writing file\n");
-				ret = 0;
+			/* write image from file to the device */
+			case LPICP_OPMODE_WRITE: 
+				ret = lpicp_main_execute_image_write(&context, config); 
+				break;
 
-				/* skip to end */
-				goto err_executing_command;
-			}
-		}
-		/* get device id */
-		else if (config->opmode == LPICP_OPMODE_GET_DEVID)
-		{
-			unsigned short device_id = 0;
+			/* erase the device */
+			case LPICP_OPMODE_ERASE_DEVICE: 
+				ret = lpicp_main_execute_erase_device(&context, config); 
+				break;
 
-			/* try to get device id */
-			if (lpp_device_id_read(&context, &device_id))
-			{
-				/* print device-id */
-				printf("Device ID: %02X.%02X\n", ((device_id >> 8) & 0xFF), (device_id & 0xFF));
-			}
-			else
-			{
-				/* error reading dev id */
-				printf("Error reading device ID\n");
-				ret = 0;
-
-				/* skip to end */
-				goto err_executing_command;
-			}
+			/* read device-id */
+			case LPICP_OPMODE_GET_DEVID: 
+				ret = lpicp_main_execute_read_devid(&context, config); 
+				break;
 		}
 
 		/* print log if verbose */
 		if (config->verbose)
 		{
-			/* print the log */
-			lpp_log_print(&context);
+			/* print the log on success */
+			if (ret) lpp_log_print(&context);
 
 			/* and release it */
 			lpp_log_destroy(&context);
@@ -286,7 +346,6 @@ int lpicp_main_execute_config(struct lpicp_config_t *config)
 		goto err_init_context;
 	}
 
-err_executing_command:
 err_log_init:
 	lpp_context_destroy(&context);
 err_init_context:
@@ -297,7 +356,7 @@ err_init_context:
 int main(int argc, char *argv[])
 {
 	int ret;
-	struct lpicp_config_t running_config;
+	struct lpp_config_t running_config;
 
 	/* by default, return with error */
 	ret = 1;
