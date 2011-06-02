@@ -117,8 +117,9 @@ int lpp_device_18f2xxx_4xxx_image_to_device(struct lpp_context_t *context,
 				.udelay = 250 /* add a bit to P9 */ 
 			};
 
-			/* send command only */
-			ret = lpp_icsp_command_only(context, &cmd_config);
+			/* send special command only followed by 16 0s of data */
+			ret = lpp_icsp_command_only(context, &cmd_config) && 
+                    lpp_icsp_data_only(context, 0x0);
 		}
 	}
 

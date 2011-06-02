@@ -277,6 +277,7 @@ int lpicp_main_execute_image_read(struct lpp_context_t *context,
 		return 0;
 	}
 }
+
 /* parse arguments to configuration */
 int lpicp_main_execute_config(struct lpp_config_t *config)
 {

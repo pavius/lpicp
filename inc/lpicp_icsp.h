@@ -35,9 +35,13 @@ int lpp_icsp_read_8(struct lpp_context_t *context,
 					const unsigned char command, 
 					unsigned char *data);
 
-/* perform programming nop */
+/* send only command */
 int lpp_icsp_command_only(struct lpp_context_t *context, 
 						  const struct mc_icsp_cmd_only_t *cmd_config);
+
+/* send only data */
+int lpp_icsp_data_only(struct lpp_context_t *context, 
+                       const unsigned int data);
 
 #endif /* __LPICPC_ICSP_H */
 
