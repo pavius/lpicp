@@ -15,6 +15,14 @@
 #include "lpicp_icsp.h"
 #include "lpicp_image.h"
 
+/* initialize */
+int lpp_device_18f2xxx_4xxx_bulk_open(struct lpp_context_t *context)
+{
+    /* set device info */
+    context->device->code_words_per_write = 16;
+    context->device->code_memory_size = 64 * 1024;
+}
+
 /* perform bulk erase */
 int lpp_device_18f2xxx_4xxx_bulk_erase(struct lpp_context_t *context)
 {
@@ -117,8 +125,9 @@ int lpp_device_18f2xxx_4xxx_image_to_device(struct lpp_context_t *context,
 				.udelay = 250 /* add a bit to P9 */ 
 			};
 
-			/* send special command only followed by 16 0s of data */
+			/* send special command only, then wait P10, then 16 0s of data */
 			ret = lpp_icsp_command_only(context, &cmd_config) && 
+                    lpp_icsp_delay_us(context, 5) && 
                     lpp_icsp_data_only(context, 0x0);
 		}
 	}
@@ -130,8 +139,8 @@ int lpp_device_18f2xxx_4xxx_image_to_device(struct lpp_context_t *context,
 /* operations */
 struct lpp_device_t lpp_device_18f2xxx_4xxx = 
 {
+    .open                   = lpp_device_18f2xxx_4xxx_bulk_open,
 	.bulk_erase 			= lpp_device_18f2xxx_4xxx_bulk_erase,
 	.image_to_device 		= lpp_device_18f2xxx_4xxx_image_to_device,
-	.code_words_per_write	= 16
 };
 

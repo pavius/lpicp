@@ -128,9 +128,19 @@ int lpp_icsp_data_only(struct lpp_context_t *context,
 {
 	int ret;
 
-	/*  */
+	/* send only data */
 	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_DATA_ONLY, data) == 0);
 
 	/* return result */
 	return ret;
+}
+
+/* delay and return success */
+int lpp_icsp_delay_us(struct lpp_context_t *context, const unsigned int delay_us)
+{
+    /* delay */
+    usleep(delay_us);
+
+    /* success */
+    return 1;
 }

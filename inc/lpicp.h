@@ -31,6 +31,7 @@ struct lpp_image_t;
 #define LPP_SET_CFGS					(0x8CA6)
 #define LPP_CLR_CFGS					(0x9CA6)
 #define LPP_SET_WREN					(0x86A6)
+#define LPP_SET_FREE					(0x88A6)
 
 /* ICSP commands */
 #define LPP_ICSP_CMD_CORE_INST				(0x0) // 0000
@@ -65,6 +66,9 @@ int lpp_context_destroy(struct lpp_context_t *context);
 
 /* perform bulk erase */
 int lpp_bulk_erase(struct lpp_context_t *context);
+
+/* perform non-bulk erase */
+int lpp_non_bulk_erase(struct lpp_context_t *context);
 
 /* read device id */
 int lpp_device_id_read(struct lpp_context_t *context, unsigned short *device_id);

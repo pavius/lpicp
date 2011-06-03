@@ -43,5 +43,8 @@ int lpp_icsp_command_only(struct lpp_context_t *context,
 int lpp_icsp_data_only(struct lpp_context_t *context, 
                        const unsigned int data);
 
+/* delay and return success */
+int lpp_icsp_delay_us(struct lpp_context_t *context, const unsigned int delay_us);
+
 #endif /* __LPICPC_ICSP_H */
 

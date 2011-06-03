@@ -21,13 +21,17 @@ struct lpp_image_t;
 struct lpp_device_t
 {
 	/* callbacks */ 
+    int (*open)(struct lpp_context_t *);
 	int (*bulk_erase)(struct lpp_context_t *);
+    int (*non_bulk_erase)(struct lpp_context_t *);
 	int (*image_to_device)(struct lpp_context_t *, struct lpp_image_t *);
 	int (*code_write_start)(struct lpp_context_t *);
 	int (*config_write_start)(struct lpp_context_t *);
 
 	/* vars */
 	unsigned int code_words_per_write;
+    unsigned int code_memory_size;
+    unsigned int code_erase_page_size;
 };
 
 /* families of devices */

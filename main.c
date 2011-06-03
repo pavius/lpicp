@@ -216,8 +216,8 @@ int lpicp_main_execute_read_devid(struct lpp_context_t *context,
 int lpicp_main_execute_erase_device(struct lpp_context_t *context, 
 									struct lpp_config_t *config)
 {
-	/* read the file */
-	if (lpp_bulk_erase(context))
+	/* do non bulk erase */
+	if (lpp_non_bulk_erase(context))
 	{
 		/* success */
 		return 1;

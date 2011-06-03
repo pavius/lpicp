@@ -31,6 +31,9 @@ int lpp_context_init(struct lpp_context_t *context,
 	{	
 		/* try to get the device */
 		context->device = lpp_device_get_by_type(context, family);
+
+		/* open the device */
+		context->device->open(context);
 	}
 	else return 0;
 }
@@ -104,6 +107,21 @@ int lpp_bulk_erase(struct lpp_context_t *context)
 	
 	/* delegate to device */
 	ret = context->device->bulk_erase(context);
+
+	/* if success, wait */
+	if (ret) usleep(20);
+
+	/* return result */
+	return ret;
+}
+
+/* perform bulk erase */
+int lpp_non_bulk_erase(struct lpp_context_t *context)
+{
+	int ret;
+	
+	/* delegate to device */
+	ret = context->device->non_bulk_erase(context);
 
 	/* if success, wait */
 	if (ret) usleep(20);
