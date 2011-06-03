@@ -290,14 +290,13 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
             /* compare them */
             int cmp_result = memcmp(image.contents, 
                                     verify_image.contents, 
-                                    image.contents_size) == 0;
+                                    image.contents_size);
 
             /* print result */
             printf("\nVerification %s (%d bytes compared)\n", 
                    cmp_result == 0 ? "success" : "failed",
                    image.contents_size);
 
-#if 0
             /* print image */
             printf("File (%d bytes):\n", image.contents_size);
             lpp_image_print(context, &image);
@@ -305,7 +304,6 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
             /* print image */
             printf("Device (%d bytes):\n", verify_image.contents_size);
             lpp_image_print(context, &verify_image);
-#endif
         }
 	}
 	else

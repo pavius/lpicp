@@ -147,8 +147,8 @@ int lpp_read_device_to_image(struct lpp_context_t *context,
 							 const unsigned int size_in_bytes,
 							 struct lpp_image_t *image)
 {
-	unsigned char *current_position;
-	unsigned int bytes_left, ret;
+	unsigned short *current_position;
+	unsigned int words_left, total_words, ret;
 
 	/* success by default */
 	ret = 1;
@@ -163,30 +163,41 @@ int lpp_read_device_to_image(struct lpp_context_t *context,
 		memset(image->contents, 0xFF, size_in_bytes);
 
 		/* point to start of buffer */
-		current_position = image->contents;
+		current_position = (unsigned short *)image->contents;
 
 		/* save the size */
 		image->contents_size = image->max_contents_size = size_in_bytes;
 
-		/* set the current address */
+		/* the amount of words left to write is (bytes / 2) + 1 if odd number of bytes */
+		lpp_image_get_content_size_in_words(image, &total_words);
+
+		/* set the current address (auto increment) */
 		ret = lpp_tblptr_set(context, offset);
 
-		/* start reading */
-		for (bytes_left = size_in_bytes; 
-			  bytes_left && ret; 
-			  --bytes_left, ++current_position)
+		/* start reading, two bytes at a time */
+		for (words_left = total_words; words_left && ret; --words_left, ++current_position)
 		{
+			unsigned short read_word = 0;
+			unsigned char msb, lsb;
+
 			/* read the data */
-			ret = lpp_icsp_read_8(context, LPP_ICSP_CMD_TBL_RD_POST_INC, current_position);
+			ret = lpp_icsp_read_8(context, LPP_ICSP_CMD_TBL_RD_POST_INC, &lsb) && 
+					lpp_icsp_read_8(context, LPP_ICSP_CMD_TBL_RD_POST_INC, &msb);
+
+			/* make sure its in the correct order */
+			read_word = ((msb << 8) | lsb);
+
+			/* save */
+			*current_position = read_word;
 
 			/* progress notification */
 			if (context->ntfy_progress)
-				context->ntfy_progress(context, (size_in_bytes - bytes_left), size_in_bytes);
+				context->ntfy_progress(context, (total_words - words_left) * 2, size_in_bytes);
 		}
 
 		/* progress notification */
 		if (context->ntfy_progress)
-			context->ntfy_progress(context, (size_in_bytes - bytes_left), size_in_bytes);
+			context->ntfy_progress(context, size_in_bytes, size_in_bytes);
 	}
 	
 	/* if failed, free the memory */
