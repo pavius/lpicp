@@ -11,6 +11,7 @@
  */
 
 #include <stdio.h>
+#include <errno.h>
 #include <getopt.h>
 #include "lpicp.h"
 #include "lpicp_log.h"
@@ -19,6 +20,10 @@
 
 /* current version */
 const char *version_string = "0.0.1";
+
+/* to show progress */
+static unsigned int lpicp_progress_current_bytes = 0;
+static const char *lpicp_progress_current_operation = NULL;
 
 /* whether to read or write */
 enum lpicp_opmode_t
@@ -38,6 +43,7 @@ struct lpp_config_t
 	char *file_name;
 	enum lpicp_opmode_t opmode;
 	unsigned int offset;
+    unsigned int size;
 };
 
 /* initialize default configuration */
@@ -48,6 +54,7 @@ void lpicp_main_init_default_config(struct lpp_config_t *config)
 	config->file_name = NULL;
 	config->opmode = LPICP_OPMODE_UNDEFINED;
 	config->offset = 0;
+    config->size = 0;
 }
 
 /* print usage */
@@ -59,9 +66,23 @@ void lpicp_main_usage(void)
 	printf("  -d, --dev             ICSP device name (e.g. /dev/icsp0)\n");
 	printf("  -f, --file            Path to Intel HEX file\n");
 	printf("  -o, --offset          Read from offset, Write to offset\n");
+    printf("  -s, --size            Size for operation, in bytes\n");
 	printf("  -v, --verbose         Verbose operation\n");
 	printf("  -h, --help            Prints this usage\n");
 	printf("\n");
+}
+
+/* parse an integer */
+int lpicp_parse_numeric(const char *number_str, int *value)
+{
+    /* zero out errno */
+    errno = 0;
+
+    /* do the conversion */
+    *value = strtol(number_str, NULL, 0);
+
+    /* check success */
+    return  (errno == 0);
 }
 
 /* parse arguments to configuration */
@@ -83,6 +104,7 @@ int lpicp_main_parse_args_to_config(int argc, char *argv[], struct lpp_config_t 
 			{"dev",  		1, 			0, 				'd'},
 			{"file",  		1, 			0, 				'f'},
 			{"offset",  	1, 			0, 				'o'},
+            {"size",  	    1, 			0, 				's'},
 			{0, 0, 0, 0}
 		};
 
@@ -90,7 +112,7 @@ int lpicp_main_parse_args_to_config(int argc, char *argv[], struct lpp_config_t 
 		int option_index = 0;
 
 		/* get the options */
-		current_option = getopt_long (argc, argv, "hvx:d:f:o:", long_options, &option_index);
+		current_option = getopt_long (argc, argv, "hvs:x:d:f:o:", long_options, &option_index);
 
 		/* Detect the end of the options. */
 		if (current_option == -1)
@@ -157,6 +179,17 @@ int lpicp_main_parse_args_to_config(int argc, char *argv[], struct lpp_config_t 
 			}
 			break;
 
+            /* size */
+            case 's':
+            {
+                /* save size */
+                if (!lpicp_parse_numeric(optarg, &config->size))
+                {
+                    /* handle error */
+                }
+            }
+            break;
+
 			/* help */
 			case 'h':
 			{
@@ -217,9 +250,13 @@ int lpicp_main_execute_erase_device(struct lpp_context_t *context,
 									struct lpp_config_t *config)
 {
 	/* do non bulk erase */
-	if (lpp_non_bulk_erase(context))
+	if (lpicp_progress_init("Erasing") && 
+        lpp_non_bulk_erase(context))
 	{
-		/* success */
+        /* space out */
+        printf("\n");
+
+        /* success */
 		return 1;
 	}
 	else
@@ -236,14 +273,40 @@ int lpicp_main_execute_erase_device(struct lpp_context_t *context,
 int lpicp_main_execute_image_write(struct lpp_context_t *context, 
 								   struct lpp_config_t *config)
 {
-	struct lpp_image_t image;
+	struct lpp_image_t image, verify_image;
 
 	/* read the file and write to device */
-	if (lpp_image_read_from_file(context, &image, config->file_name, 64 * 1024) && 
-		lpp_program_image_to_device(context, &image))
+	if (lpp_image_read_from_file(context, &image, config->file_name, context->device->code_memory_size) && 
+		lpicp_progress_init("Writing")                                                                  &&
+        lpp_program_image_to_device(context, &image))
 	{
-		/* success */
-		return 1;
+        /* space out */
+        printf("\n");
+
+		/* now try to read */
+        if (lpicp_progress_init("Reading")                                            && 
+            lpp_read_device_to_image(context, 0, image.contents_size, &verify_image))
+        {
+            /* compare them */
+            int cmp_result = memcmp(image.contents, 
+                                    verify_image.contents, 
+                                    image.contents_size) == 0;
+
+            /* print result */
+            printf("\nVerification %s (%d bytes compared)\n", 
+                   cmp_result == 0 ? "success" : "failed",
+                   image.contents_size);
+
+#if 0
+            /* print image */
+            printf("File (%d bytes):\n", image.contents_size);
+            lpp_image_print(context, &image);
+
+            /* print image */
+            printf("Device (%d bytes):\n", verify_image.contents_size);
+            lpp_image_print(context, &verify_image);
+#endif
+        }
 	}
 	else
 	{
@@ -261,21 +324,63 @@ int lpicp_main_execute_image_read(struct lpp_context_t *context,
 {
 	struct lpp_image_t image;
 
+    /* size to read */
+    unsigned int size = (config->size == 0 ? context->device->code_memory_size : config->size);
+
 	/* try to read the image */
-	if (lpp_read_device_to_image(context, 0, 64 * 1024, &image) &&
+	if (lpicp_progress_init("Reading")                                                  && 
+        lpp_read_device_to_image(context, 0, size, &image) &&
 		lpp_image_write_to_file(context, &image, config->file_name))
 	{
-		/* success */
+        /* print image */
+        lpp_image_print(context, &image);
+
+        /* done */
+        printf("\n");
+
+        /* success */
 		return 1;
 	}
 	else
 	{
 		/* error writing file */
-		printf("Error reading file from device\n");
+		printf("\nError reading file from device\n");
 
 		/* error */
 		return 0;
 	}
+}
+
+/* before each operation */
+int lpicp_progress_init(const char *current_operation)
+{
+    /* zero out the progress */
+    lpicp_progress_current_bytes = 0;
+
+    /* save opname */
+    lpicp_progress_current_operation = current_operation;
+
+    /* success */
+    return 1;
+}
+
+/* show progress */
+int lpicp_progress_show(struct lpp_context_t *context, 
+                        const unsigned int current_bytes, 
+                        const unsigned int total_bytes)
+{
+    /* print each X bytes */
+    if ((current_bytes - lpicp_progress_current_bytes) > 1024 || 
+        current_bytes >= total_bytes)
+    {
+        /* do the print */
+        printf("\r%s: %d of %d (%d%%)", lpicp_progress_current_operation, 
+               current_bytes, total_bytes, current_bytes * 100 / total_bytes);
+        fflush(stdout);
+
+        /* save printed bytes mark */
+        lpicp_progress_current_bytes = current_bytes;
+    }
 }
 
 /* parse arguments to configuration */
@@ -288,7 +393,7 @@ int lpicp_main_execute_config(struct lpp_config_t *config)
 	ret = 1;
 
 	/* try to init context */
-	if (lpp_context_init(&context, LPP_DEVICE_FAMILY_18F, config->dev_name))
+	if (lpp_context_init(&context, LPP_DEVICE_FAMILY_18F, config->dev_name, lpicp_progress_show))
 	{
 		/* init log if verbose */
 		if (config->verbose)

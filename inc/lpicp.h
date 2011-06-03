@@ -45,6 +45,9 @@ struct lpp_image_t;
 #define LPP_ICSP_CMD_TBL_WR_PROG_POST_INC_2 (0xE) // 1110
 #define LPP_ICSP_CMD_TBL_WR_PROG			(0xF) // 1111
 
+/* notification callback types */
+typedef int (*ntfy_progress_t)(struct lpp_context_t *, const unsigned int, const unsigned int);
+
 /* lpp context */
 struct lpp_context_t
 {
@@ -54,12 +57,16 @@ struct lpp_context_t
 	char						*icsp_dev_name;
 	int							icsp_dev_file;
 	struct lpp_device_t			*device;
+
+    /* notifications */
+    ntfy_progress_t             ntfy_progress;
 };
 
 /* initialize a context */
 int lpp_context_init(struct lpp_context_t *context, 
 					 const enum lpp_device_family_e family,
-					 char *icsp_dev_name);
+					 char *icsp_dev_name,
+                     ntfy_progress_t ntfy_progress);
 
 /* destroy a context */
 int lpp_context_destroy(struct lpp_context_t *context);

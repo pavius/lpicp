@@ -163,3 +163,34 @@ int lpp_image_write_to_file(struct lpp_context_t *context,
 {
 	/* TODO */
 }
+
+/* print an image to stdout */
+int lpp_image_print(struct lpp_context_t *context, 
+					struct lpp_image_t *image)
+{
+    unsigned int byte_idx, row_address;
+    const unsigned int row_byte_count = 16;
+
+    /* iterate through the bytes */
+    for (row_address = 0, byte_idx = 0; 
+          byte_idx < image->contents_size; 
+          ++byte_idx)
+    {
+        /* starting new row? */
+        if ((byte_idx & (row_byte_count - 1)) == 0)
+        {
+            /* row header */
+            printf("\n[%04X] ", row_address);
+
+            /* next address */
+            row_address += row_byte_count;
+        }
+
+        /* print the byte */
+        printf("%02X", image->contents[byte_idx]);
+    }
+
+    /* done */
+    printf("\n");
+}
+

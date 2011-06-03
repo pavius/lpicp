@@ -99,8 +99,19 @@ int lpp_device_18f2xx_4xx_non_bulk_erase(struct lpp_context_t *context)
                         lpp_icsp_delay_us(context, 5) && 
                         lpp_icsp_data_only(context, 0x0);
             }
+
+            /* progress notification */
+            if (context->ntfy_progress)
+                context->ntfy_progress(context, current_address, context->device->code_memory_size);
         }
+
+        /* progress notification */
+        if (context->ntfy_progress)
+            context->ntfy_progress(context, current_address, context->device->code_memory_size);
     }
+
+    /* success */
+    return 1;
 }
 
 /* start writing to code memory */

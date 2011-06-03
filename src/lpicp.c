@@ -21,7 +21,8 @@
 /* initialize a context */
 int lpp_context_init(struct lpp_context_t *context,
 					 const enum lpp_device_family_e family,
-					 char *icsp_dev_name)
+					 char *icsp_dev_name,
+                     ntfy_progress_t ntfy_progress)
 {
 	/* init structure */
 	memset(context, 0, sizeof(struct lpp_context_t));
@@ -29,6 +30,9 @@ int lpp_context_init(struct lpp_context_t *context,
 	/* try to open the driver */
 	if (lpp_icsp_init(context, icsp_dev_name))
 	{	
+		/* save callbacks and data */
+		context->ntfy_progress = ntfy_progress;
+
 		/* try to get the device */
 		context->device = lpp_device_get_by_type(context, family);
 
@@ -174,7 +178,15 @@ int lpp_read_device_to_image(struct lpp_context_t *context,
 		{
 			/* read the data */
 			ret = lpp_icsp_read_8(context, LPP_ICSP_CMD_TBL_RD_POST_INC, current_position);
+
+			/* progress notification */
+			if (context->ntfy_progress)
+				context->ntfy_progress(context, (size_in_bytes - bytes_left), size_in_bytes);
 		}
+
+		/* progress notification */
+		if (context->ntfy_progress)
+			context->ntfy_progress(context, (size_in_bytes - bytes_left), size_in_bytes);
 	}
 	
 	/* if failed, free the memory */

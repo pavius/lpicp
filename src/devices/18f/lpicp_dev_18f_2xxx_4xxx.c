@@ -129,7 +129,15 @@ int lpp_device_18f2xxx_4xxx_image_to_device(struct lpp_context_t *context,
 			ret = lpp_icsp_command_only(context, &cmd_config) && 
                     lpp_icsp_delay_us(context, 5) && 
                     lpp_icsp_data_only(context, 0x0);
-		}
+
+            /* progress notification */
+            if (context->ntfy_progress)
+                context->ntfy_progress(context, current_address, image->contents_size);
+        }
+
+        /* progress notification */
+        if (context->ntfy_progress)
+            context->ntfy_progress(context, current_address, image->contents_size);
 	}
 
 	/* return the result */
