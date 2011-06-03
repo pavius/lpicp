@@ -14,6 +14,36 @@
 #include "ihex.h"
 #include <stdio.h>
 
+/* initialize an image */
+void lpp_image_init(struct lpp_context_t *context, 
+                    struct lpp_image_t *image)
+{
+    /* zero out the image */
+    memset(image, 0, sizeof(struct lpp_image_t));
+}
+
+/* record to big endian */
+void lpp_image_data_record_to_big_endian(struct lpp_context_t *context, 
+                                         IHexRecord *hex_record)
+{
+    unsigned int byte_index;
+
+    /* doesn't support records with odd number of bytes */
+    /* lpp_assert(hex_record->dataLen & 0x1 == 0, 
+               "HEX file record must contain even number of bytes"); */
+
+    /* swap all bytes @ N, N+1 */
+    for (byte_index = 0; byte_index < hex_record->dataLen; byte_index += 2)
+    {   
+        /* save original */
+        unsigned char original_byte_n = hex_record->data[byte_index];
+
+        /* do swap */
+        hex_record->data[byte_index] = hex_record->data[byte_index + 1];
+        hex_record->data[byte_index + 1] = original_byte_n;
+    }
+}
+
 /* handle record type */
 int lpp_image_read_handle_data_record(struct lpp_context_t *context, 
 									  struct lpp_image_t *image, 
@@ -34,7 +64,10 @@ int lpp_image_read_handle_data_record(struct lpp_context_t *context,
 			goto err_not_enough_space;
 		}
 
-		/* read the record to the proper offset */
+        /* convert record to big endian */
+        lpp_image_data_record_to_big_endian(context, hex_record);
+
+        /* read the record to the proper offset */
 		memcpy(image->contents + hex_record->address, 
 			   hex_record->data, 
 			   hex_record->dataLen);
@@ -43,9 +76,30 @@ int lpp_image_read_handle_data_record(struct lpp_context_t *context,
 		if (write_end_address > image->contents_size) 
 			image->contents_size = write_end_address;
 	}
-	/* config space. TODO: make devince unspecific */
+	/* config space. TODO: make device unspecific */
 	else if (address_ext == 0x3000)
 	{
+        /* write to configuration */
+        if ((hex_record->address + hex_record->dataLen) <= sizeof(image->config))
+        {
+            unsigned int valid_byte_idx;
+
+            /* copy configuration to offset */
+            memcpy(&image->config[hex_record->address], 
+                   hex_record->data,
+                   hex_record->dataLen);
+
+            /* set valid bits, indicating that this configuration byte has been read from source */
+            for (valid_byte_idx = hex_record->address;
+                  valid_byte_idx < hex_record->address + hex_record->dataLen;
+                  ++valid_byte_idx)
+            {
+                /* set appropriate byte valid bit */
+                image->config_valid |= (1 << valid_byte_idx);
+            }
+        }
+        /* can't store this, not supported */
+        else goto err_not_enough_space;
 	}
 
 	/* done */
@@ -110,8 +164,9 @@ int lpp_image_read_from_file(struct lpp_context_t *context,
 				/* set address MSb */
 				else if (hex_record.type == IHEX_TYPE_04)
 				{
-					/* set the extended address */
-					memcpy(&address_ext, hex_record.data, sizeof(address_ext));
+                    /* set the extended address */
+                    address_ext = hex_record.data[0];
+                    address_ext |= (hex_record.data[1] << 8);
 				}
 				/* end record */
 				else if (hex_record.type == IHEX_TYPE_01)
@@ -168,7 +223,7 @@ int lpp_image_write_to_file(struct lpp_context_t *context,
 int lpp_image_print(struct lpp_context_t *context, 
 					struct lpp_image_t *image)
 {
-    unsigned int byte_idx, row_address;
+    unsigned int byte_idx, row_address, config_byte_idx;
     const unsigned int row_byte_count = 16;
 
     /* iterate through the bytes */
@@ -188,6 +243,22 @@ int lpp_image_print(struct lpp_context_t *context,
 
         /* print the byte */
         printf("%02X", image->contents[byte_idx]);
+    }
+
+    /* space out */
+    printf("\n.\n");
+
+    /* print configuration bytes */
+    for (config_byte_idx = 0;
+          config_byte_idx < LPP_MAX_CONFIG_BITS;
+          ++config_byte_idx)
+    {
+        /* is the byte valid? */
+        if (image->config_valid & (1 << config_byte_idx))
+        {
+            /* print config byte */
+            printf("CFG%02X: %02X\n", config_byte_idx, image->config[config_byte_idx]);
+        }
     }
 
     /* done */

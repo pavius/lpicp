@@ -135,17 +135,24 @@ int lpp_non_bulk_erase(struct lpp_context_t *context)
 }
 
 /* write an image to the device */
-int lpp_program_image_to_device(struct lpp_context_t *context, struct lpp_image_t *image)
+int lpp_write_image_to_device_program(struct lpp_context_t *context, struct lpp_image_t *image)
 {
 	/* delegate to device */
-	return context->device->image_to_device(context, image);
+	return context->device->image_to_device_program(context, image);
 }
 
-/* read the image from the device */
-int lpp_read_device_to_image(struct lpp_context_t *context, 
-							 const unsigned int offset,
-							 const unsigned int size_in_bytes,
-							 struct lpp_image_t *image)
+/* write an image to the device config */
+int lpp_write_image_to_device_config(struct lpp_context_t *context, struct lpp_image_t *image)
+{
+	/* delegate to device */
+	return context->device->image_to_device_config(context, image);
+}
+
+/* read the image program from the device */
+int lpp_read_device_program_to_image(struct lpp_context_t *context, 
+									 const unsigned int offset,
+									 const unsigned int size_in_bytes,
+									 struct lpp_image_t *image)
 {
 	unsigned short *current_position;
 	unsigned int words_left, total_words, ret;
@@ -213,3 +220,29 @@ int lpp_read_device_to_image(struct lpp_context_t *context,
 	return ret;
 }
 
+/* read the image program from the device */
+int lpp_read_device_config_to_image(struct lpp_context_t *context,
+									struct lpp_image_t *image)
+{
+	unsigned int ret, config_byte_idx;
+
+	/* set the config address */
+	ret = lpp_tblptr_set(context, context->device->config_address);
+
+	/* start reading, two bytes at a time */
+	for (config_byte_idx = 0; 
+		  config_byte_idx < context->device->config_bytes && ret; 
+		  ++config_byte_idx)
+	{
+		/* read the data */
+		ret = lpp_icsp_read_8(context, 
+							  LPP_ICSP_CMD_TBL_RD_POST_INC, 
+							  &image->config[config_byte_idx]);
+
+		/* set the appropriate config byte */
+		image->config_valid |= (1 << config_byte_idx);
+	}
+
+	/* done */
+	return ret;
+}

@@ -72,12 +72,20 @@ int lpp_device_18f2xxx_4xxx_config_write_start(struct lpp_context_t *context)
 }
 
 /* burn the image to the device */
-int lpp_device_18f2xxx_4xxx_image_to_device(struct lpp_context_t *context, 
-											struct lpp_image_t *image)
+int lpp_device_18f2xxx_4xxx_image_to_device_config(struct lpp_context_t *context, 
+                                                   struct lpp_image_t *image)
+{
+    /* not supported yet */
+    return 0;
+}
+
+/* burn the image to the device */
+int lpp_device_18f2xxx_4xxx_image_to_device_program(struct lpp_context_t *context, 
+                                                    struct lpp_image_t *image)
 {
 	int ret;
 	unsigned int words_left, words_to_write, word_index;
-	unsigned short current_address, *current_data;
+	unsigned short current_address, *current_data, data_to_write;
 
 	/* point to start data */
 	current_data = (unsigned short *)image->contents;
@@ -147,8 +155,9 @@ int lpp_device_18f2xxx_4xxx_image_to_device(struct lpp_context_t *context,
 /* operations */
 struct lpp_device_t lpp_device_18f2xxx_4xxx = 
 {
-    .open                   = lpp_device_18f2xxx_4xxx_bulk_open,
-	.bulk_erase 			= lpp_device_18f2xxx_4xxx_bulk_erase,
-	.image_to_device 		= lpp_device_18f2xxx_4xxx_image_to_device,
+    .open                       = lpp_device_18f2xxx_4xxx_bulk_open,
+	.bulk_erase 			    = lpp_device_18f2xxx_4xxx_bulk_erase,
+	.image_to_device_program 	= lpp_device_18f2xxx_4xxx_image_to_device_program,
+    .image_to_device_config 	= lpp_device_18f2xxx_4xxx_image_to_device_config,
 };
 

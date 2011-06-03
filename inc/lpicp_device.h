@@ -24,7 +24,8 @@ struct lpp_device_t
     int (*open)(struct lpp_context_t *);
 	int (*bulk_erase)(struct lpp_context_t *);
     int (*non_bulk_erase)(struct lpp_context_t *);
-	int (*image_to_device)(struct lpp_context_t *, struct lpp_image_t *);
+	int (*image_to_device_program)(struct lpp_context_t *, struct lpp_image_t *);
+    int (*image_to_device_config)(struct lpp_context_t *, struct lpp_image_t *);
 	int (*code_write_start)(struct lpp_context_t *);
 	int (*config_write_start)(struct lpp_context_t *);
 
@@ -32,6 +33,8 @@ struct lpp_device_t
 	unsigned int code_words_per_write;
     unsigned int code_memory_size;
     unsigned int code_erase_page_size;
+    unsigned int config_address;
+    unsigned int config_bytes;
 };
 
 /* families of devices */

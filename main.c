@@ -275,17 +275,22 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
 {
 	struct lpp_image_t image, verify_image;
 
+    /* initialize images */
+    lpp_image_init(context, &image);
+    lpp_image_init(context, &verify_image);
+
 	/* read the file and write to device */
-	if (lpp_image_read_from_file(context, &image, config->file_name, context->device->code_memory_size) && 
+	if (lpp_image_read_from_file(context, &image, config->file_name, context->device->code_memory_size) &&
 		lpicp_progress_init("Writing")                                                                  &&
-        lpp_program_image_to_device(context, &image))
+        lpp_write_image_to_device_program(context, &image)                                              &&
+        lpp_write_image_to_device_config(context, &image))
 	{
         /* space out */
         printf("\n");
 
-		/* now try to read */
+        /* now try to read */
         if (lpicp_progress_init("Reading")                                            && 
-            lpp_read_device_to_image(context, 0, image.contents_size, &verify_image))
+            lpp_read_device_program_to_image(context, 0, image.contents_size, &verify_image))
         {
             /* compare them */
             int cmp_result = memcmp(image.contents, 
@@ -325,9 +330,13 @@ int lpicp_main_execute_image_read(struct lpp_context_t *context,
     /* size to read */
     unsigned int size = (config->size == 0 ? context->device->code_memory_size : config->size);
 
+    /* initialize image */
+    lpp_image_init(context, &image);
+
 	/* try to read the image */
-	if (lpicp_progress_init("Reading")                                                  && 
-        lpp_read_device_to_image(context, 0, size, &image) &&
+	if (lpicp_progress_init("Reading")                              && 
+        lpp_read_device_program_to_image(context, 0, size, &image)  &&
+        lpp_read_device_config_to_image(context, &image)            &&
 		lpp_image_write_to_file(context, &image, config->file_name))
 	{
         /* print image */

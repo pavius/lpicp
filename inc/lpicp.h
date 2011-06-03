@@ -32,6 +32,9 @@ struct lpp_image_t;
 #define LPP_CLR_CFGS					(0x9CA6)
 #define LPP_SET_WREN					(0x86A6)
 #define LPP_SET_FREE					(0x88A6)
+#define LPP_INC_TBLPTRL					(0x2AF6)
+#define LPP_SET_PC_100K_0               (0xEF00)
+#define LPP_SET_PC_100K_1               (0xF800)
 
 /* ICSP commands */
 #define LPP_ICSP_CMD_CORE_INST				(0x0) // 0000
@@ -80,14 +83,21 @@ int lpp_non_bulk_erase(struct lpp_context_t *context);
 /* read device id */
 int lpp_device_id_read(struct lpp_context_t *context, unsigned short *device_id);
 
-/* write an image to the device */
-int lpp_program_image_to_device(struct lpp_context_t *context, struct lpp_image_t *image);
+/* write an image to the device program */
+int lpp_write_image_to_device_program(struct lpp_context_t *context, struct lpp_image_t *image);
+
+/* write an image to the device config */
+int lpp_write_image_to_device_config(struct lpp_context_t *context, struct lpp_image_t *image);
 
 /* read the image from the device */
-int lpp_read_device_to_image(struct lpp_context_t *context, 
-							 const unsigned int offset,
-							 const unsigned int size_in_bytes,
-							 struct lpp_image_t *image);
+int lpp_read_device_program_to_image(struct lpp_context_t *context, 
+                                     const unsigned int offset,
+                                     const unsigned int size_in_bytes,
+                                     struct lpp_image_t *image);
+
+/* read the image program from the device */
+int lpp_read_device_config_to_image(struct lpp_context_t *context,
+									struct lpp_image_t *image);
 
 /* execute an instruction */
 int lpp_exec_instruction(struct lpp_context_t *context,
