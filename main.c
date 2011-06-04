@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <getopt.h>
+#include <sys/time.h>
 #include "lpicp.h"
 #include "lpicp_log.h"
 #include "lpicp_icsp.h"
@@ -280,7 +281,7 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
     lpp_image_init(context, &verify_image);
 
 	/* read the file and write to device */
-	if (lpp_image_read_from_file(context, &image, config->file_name, context->device->code_memory_size) &&
+	if (lpp_image_read_from_file(context, &image, config->file_name, context->device.code_memory_size)  &&
 		lpicp_progress_init("Writing")                                                                  &&
         lpp_write_image_to_device_program(context, &image)                                              &&
         lpp_write_image_to_device_config(context, &image))
@@ -309,16 +310,19 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
             /* print image */
             printf("Device (%d bytes):\n", verify_image.contents_size);
             lpp_image_print(context, &verify_image);
+
+            /* return compare result */
+            return (cmp_result == 0);
         }
 	}
 	else
 	{
 		/* error writing file */
 		printf("Error writing file\n");
-
-		/* error */
-		return 0;
 	}
+
+    /* error */
+    return 0;
 }
 
 /* do read */
@@ -328,7 +332,7 @@ int lpicp_main_execute_image_read(struct lpp_context_t *context,
 	struct lpp_image_t image;
 
     /* size to read */
-    unsigned int size = (config->size == 0 ? context->device->code_memory_size : config->size);
+    unsigned int size = (config->size == 0 ? context->device.code_memory_size : config->size);
 
     /* initialize image */
     lpp_image_init(context, &image);
@@ -341,9 +345,6 @@ int lpicp_main_execute_image_read(struct lpp_context_t *context,
 	{
         /* print image */
         lpp_image_print(context, &image);
-
-        /* done */
-        printf("\n");
 
         /* success */
 		return 1;
@@ -402,6 +403,11 @@ int lpicp_main_execute_config(struct lpp_config_t *config)
 	/* try to init context */
 	if (lpp_context_init(&context, LPP_DEVICE_FAMILY_18F, config->dev_name, lpicp_progress_show))
 	{
+        struct timeval start_time, end_time, diff_time;
+
+        /* print device */
+        printf("Found device (%s)\n", context.device.name);
+
 		/* init log if verbose */
 		if (config->verbose)
 		{
@@ -415,6 +421,9 @@ int lpicp_main_execute_config(struct lpp_config_t *config)
 				goto err_log_init;
 			}
 		}
+
+        /* get start time */
+        gettimeofday(&start_time, NULL);
 
 		/* handle opmode */
 		switch (config->opmode)
@@ -440,6 +449,15 @@ int lpicp_main_execute_config(struct lpp_config_t *config)
 				break;
 		}
 
+        /* get end time */
+        gettimeofday(&end_time, NULL);
+
+        /* diff the time */
+        timersub(&end_time, &start_time, &diff_time);
+
+        /* print time */
+        if (ret) printf("Done successfully in %d.%03ds\n", diff_time.tv_sec, diff_time.tv_usec / 1000);
+
 		/* print log if verbose */
 		if (config->verbose)
 		{
@@ -452,6 +470,9 @@ int lpicp_main_execute_config(struct lpp_config_t *config)
 	}
 	else
 	{
+        /* no device found */
+        printf("Failed to supported device\n");
+
 		/* set err */
 		ret = 1;
 

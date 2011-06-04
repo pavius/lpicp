@@ -19,8 +19,8 @@
 int lpp_device_18f2xxx_4xxx_bulk_open(struct lpp_context_t *context)
 {
     /* set device info */
-    context->device->code_words_per_write = 16;
-    context->device->code_memory_size = 64 * 1024;
+    context->device.code_words_per_write = 16;
+    context->device.code_memory_size = 64 * 1024;
 }
 
 /* perform bulk erase */
@@ -100,7 +100,7 @@ int lpp_device_18f2xxx_4xxx_image_to_device_program(struct lpp_context_t *contex
 	for (current_address = 0; words_left && ret; words_left -= words_to_write)
 	{
 		/* get words per writes */
-		unsigned int write_buffer_size_in_words = context->device->code_words_per_write;
+		unsigned int write_buffer_size_in_words = context->device.code_words_per_write;
 
 		/* do we have enough data to fill a buffer? if not, just write whatever's left */
 		words_to_write = (write_buffer_size_in_words < words_left) ? 
@@ -153,7 +153,7 @@ int lpp_device_18f2xxx_4xxx_image_to_device_program(struct lpp_context_t *contex
 }
 
 /* operations */
-struct lpp_device_t lpp_device_18f2xxx_4xxx = 
+struct lpp_device_group_t lpp_device_18f2xxx_4xxx = 
 {
     .open                       = lpp_device_18f2xxx_4xxx_bulk_open,
 	.bulk_erase 			    = lpp_device_18f2xxx_4xxx_bulk_erase,

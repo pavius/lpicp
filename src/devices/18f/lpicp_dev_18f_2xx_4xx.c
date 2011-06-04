@@ -15,15 +15,32 @@
 #include "lpicp_icsp.h"
 #include "lpicp_image.h"
 
-/* initialize */
+#include <stdio.h>
+
+/* initialize the device by id */
 int lpp_device_18f2xx_4xx_open(struct lpp_context_t *context)
 {
-    /* set device info */
-    context->device->code_words_per_write = 4;
-    context->device->code_erase_page_size = 64;
-    context->device->code_memory_size = 32 * 1024;
-    context->device->config_address = 0x300000;
-    context->device->config_bytes = 14;
+    const unsigned char dev1 = (context->device.id >> 8) & 0xFF;
+
+    /* by sub type (get 3 MSb) */
+    switch ((dev1 & 0XE0) >> 5)
+    {
+        /* 001: PIC18F452 */
+        case 0x1: 
+            context->device.code_words_per_write   = 4;
+            context->device.code_erase_page_size   = 64;
+            context->device.code_memory_size       = 32 * 1024;
+            context->device.config_address         = 0x300000;
+            context->device.config_bytes           = 14;
+            context->device.name                   = "PIC18F452";
+            break;
+
+        /* unsupported */
+        default: return 0;
+    }
+
+    /* found */
+    return 1;
 }
 
 /* perform bulk erase */
@@ -73,8 +90,8 @@ int lpp_device_18f2xx_4xx_non_bulk_erase(struct lpp_context_t *context)
     {
         /* iterate through the pages */
         for (current_address = 0; 
-              current_address < context->device->code_memory_size && ret; 
-              current_address += context->device->code_erase_page_size)
+              current_address < context->device.code_memory_size && ret; 
+              current_address += context->device.code_erase_page_size)
         {
             /* enter erase mode, set the current address and do the programming */
             ret = lpp_exec_instruction(context, LPP_SET_EEPGD)                  &&
@@ -104,12 +121,12 @@ int lpp_device_18f2xx_4xx_non_bulk_erase(struct lpp_context_t *context)
 
             /* progress notification */
             if (context->ntfy_progress)
-                context->ntfy_progress(context, current_address, context->device->code_memory_size);
+                context->ntfy_progress(context, current_address, context->device.code_memory_size);
         }
 
         /* progress notification */
         if (context->ntfy_progress)
-            context->ntfy_progress(context, current_address, context->device->code_memory_size);
+            context->ntfy_progress(context, current_address, context->device.code_memory_size);
     }
 
     /* success */
@@ -144,11 +161,11 @@ int lpp_device_18f2xx_4xx_image_to_device_config(struct lpp_context_t *context,
 			lpp_exec_instruction(context, LPP_SET_CFGS)                 && 
             lpp_exec_instruction(context, LPP_SET_PC_100K_0)            && 
             lpp_exec_instruction(context, LPP_SET_PC_100K_1)            && 
-            lpp_tblptr_set(context, context->device->config_address);
+            lpp_tblptr_set(context, context->device.config_address);
 
     /* start reading, two bytes at a time */
     for (config_byte_idx = 0; 
-          config_byte_idx < context->device->config_bytes && ret; 
+          config_byte_idx < context->device.config_bytes && ret; 
           ++config_byte_idx)
     {
         unsigned short value = 0;
@@ -216,7 +233,7 @@ int lpp_device_18f2xx_4xx_image_to_device_program(struct lpp_context_t *context,
 }
 
 /* operations */
-struct lpp_device_t lpp_device_18f2xx_4xx = 
+struct lpp_device_group_t lpp_device_18f2xx_4xx = 
 {
     .open                       = lpp_device_18f2xx_4xx_open,
 	.bulk_erase 			    = lpp_device_18f2xx_4xx_bulk_erase,

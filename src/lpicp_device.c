@@ -10,11 +10,13 @@
  *
  */
 
+#include <stdlib.h>
+#include "lpicp.h"
 #include "lpicp_device.h"
 
 /* forward declare all structures */
-extern struct lpp_device_t lpp_device_18f2xx_4xx;
-extern struct lpp_device_t lpp_device_18f2xxx_4xxx;
+extern struct lpp_device_group_t lpp_device_18f2xx_4xx;
+extern struct lpp_device_group_t lpp_device_18f2xxx_4xxx;
 
 /* read device id */
 int lpp_device_id_read(struct lpp_context_t *context, unsigned short *device_id)
@@ -24,8 +26,8 @@ int lpp_device_id_read(struct lpp_context_t *context, unsigned short *device_id)
 }
 
 /* get device structure by type */
-struct lpp_device_t* lpp_device_get_by_type(struct lpp_context_t *context, 
-											const enum lpp_device_family_e family)
+int lpp_device_init_by_family(struct lpp_context_t *context, 
+                              const enum lpp_device_family_type_t family)
 {
 	unsigned short device_id;
 
@@ -33,11 +35,27 @@ struct lpp_device_t* lpp_device_get_by_type(struct lpp_context_t *context,
 	if (family == LPP_DEVICE_FAMILY_18F)
 	{
 		/* get the device id */
-		if (/* lpp_device_id_read(context, &device_id) */ 1)
+		if (lpp_device_id_read(context, &context->device.id))
 		{
-			/* by result TODO */
-			return &lpp_device_18f2xx_4xx;
+            /* get devs */
+            const unsigned char dev2 = (context->device.id & 0xFF);
+
+            /* by dev2 */
+            switch (dev2)
+            {
+                /* 2xx/4xx */
+                case 0x4:
+                case 0x8:
+                    context->device.group = &lpp_device_18f2xx_4xx;
+                    break;
+            }
 		}
 	}
+
+    /* open the device */
+    if (context->device.group) context->device.group->open(context);
+
+    /* success if a group has been assigned */
+    return (context->device.group != NULL);
 }
 

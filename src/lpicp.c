@@ -20,7 +20,7 @@
 
 /* initialize a context */
 int lpp_context_init(struct lpp_context_t *context,
-					 const enum lpp_device_family_e family,
+					 const enum lpp_device_family_type_t family,
 					 char *icsp_dev_name,
                      ntfy_progress_t ntfy_progress)
 {
@@ -34,10 +34,7 @@ int lpp_context_init(struct lpp_context_t *context,
 		context->ntfy_progress = ntfy_progress;
 
 		/* try to get the device */
-		context->device = lpp_device_get_by_type(context, family);
-
-		/* open the device */
-		context->device->open(context);
+		return lpp_device_init_by_family(context, family);
 	}
 	else return 0;
 }
@@ -110,7 +107,7 @@ int lpp_bulk_erase(struct lpp_context_t *context)
 	int ret;
 	
 	/* delegate to device */
-	ret = context->device->bulk_erase(context);
+	ret = context->device.group->bulk_erase(context);
 
 	/* if success, wait */
 	if (ret) usleep(20);
@@ -125,7 +122,7 @@ int lpp_non_bulk_erase(struct lpp_context_t *context)
 	int ret;
 	
 	/* delegate to device */
-	ret = context->device->non_bulk_erase(context);
+	ret = context->device.group->non_bulk_erase(context);
 
 	/* if success, wait */
 	if (ret) usleep(20);
@@ -138,14 +135,14 @@ int lpp_non_bulk_erase(struct lpp_context_t *context)
 int lpp_write_image_to_device_program(struct lpp_context_t *context, struct lpp_image_t *image)
 {
 	/* delegate to device */
-	return context->device->image_to_device_program(context, image);
+	return context->device.group->image_to_device_program(context, image);
 }
 
 /* write an image to the device config */
 int lpp_write_image_to_device_config(struct lpp_context_t *context, struct lpp_image_t *image)
 {
 	/* delegate to device */
-	return context->device->image_to_device_config(context, image);
+	return context->device.group->image_to_device_config(context, image);
 }
 
 /* read the image program from the device */
@@ -227,11 +224,11 @@ int lpp_read_device_config_to_image(struct lpp_context_t *context,
 	unsigned int ret, config_byte_idx;
 
 	/* set the config address */
-	ret = lpp_tblptr_set(context, context->device->config_address);
+	ret = lpp_tblptr_set(context, context->device.config_address);
 
 	/* start reading, two bytes at a time */
 	for (config_byte_idx = 0; 
-		  config_byte_idx < context->device->config_bytes && ret; 
+		  config_byte_idx < context->device.config_bytes && ret; 
 		  ++config_byte_idx)
 	{
 		/* read the data */

@@ -59,7 +59,7 @@ struct lpp_context_t
 	unsigned int				log_current_idx;
 	char						*icsp_dev_name;
 	int							icsp_dev_file;
-	struct lpp_device_t			*device;
+	struct lpp_device_t			device;
 
     /* notifications */
     ntfy_progress_t             ntfy_progress;
@@ -67,7 +67,7 @@ struct lpp_context_t
 
 /* initialize a context */
 int lpp_context_init(struct lpp_context_t *context, 
-					 const enum lpp_device_family_e family,
+					 const enum lpp_device_family_type_t family,
 					 char *icsp_dev_name,
                      ntfy_progress_t ntfy_progress);
 
