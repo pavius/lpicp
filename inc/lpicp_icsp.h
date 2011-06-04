@@ -27,17 +27,17 @@ int lpp_icsp_destroy(struct lpp_context_t *context);
 
 /* Write 16 bits via ICSP driver */
 int lpp_icsp_write_16(struct lpp_context_t *context, 
-					const unsigned char command, 
-					const unsigned short data);
+                    const unsigned char command, 
+                    const unsigned short data);
 
 /* Read 8 bits via ICSP driver */
 int lpp_icsp_read_8(struct lpp_context_t *context, 
-					const unsigned char command, 
-					unsigned char *data);
+                    const unsigned char command, 
+                    unsigned char *data);
 
 /* send only command */
 int lpp_icsp_command_only(struct lpp_context_t *context, 
-						  const struct mc_icsp_cmd_only_t *cmd_config);
+                          const struct mc_icsp_cmd_only_t *cmd_config);
 
 /* send only data */
 int lpp_icsp_data_only(struct lpp_context_t *context, 

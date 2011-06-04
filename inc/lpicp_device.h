@@ -49,7 +49,7 @@ struct lpp_device_t
 /* families of devices */
 enum lpp_device_family_type_t
 {
-	LPP_DEVICE_FAMILY_18F,
+    LPP_DEVICE_FAMILY_18F,
 };
 
 /* get device structure by type */

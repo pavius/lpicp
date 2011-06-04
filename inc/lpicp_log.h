@@ -20,12 +20,12 @@ void lpp_log_print(struct lpp_context_t *context);
 
 /* log a command */
 int lpp_log_command(struct lpp_context_t *context, 
-					const unsigned char command, 
-					const unsigned short data);
+                    const unsigned char command, 
+                    const unsigned short data);
 
 /* initialize a context */
 int lpp_log_init(struct lpp_context_t *context,
-				 const unsigned int cmd_log_record_count);
+                 const unsigned int cmd_log_record_count);
 
 /* destroy a context */
 int lpp_log_destroy(struct lpp_context_t *context);

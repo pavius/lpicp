@@ -23,7 +23,7 @@ int lpp_device_18f2xx_4xx_open(struct lpp_context_t *context)
     const unsigned char dev1 = (context->device.id >> 8) & 0xFF;
 
     /* by sub type (get 3 MSb) */
-    switch ((dev1 & 0XE0) >> 5)
+    switch ((dev1 & 0xE0) >> 5)
     {
         /* 001: PIC18F452 */
         case 0x1: 
@@ -46,33 +46,33 @@ int lpp_device_18f2xx_4xx_open(struct lpp_context_t *context)
 /* perform bulk erase */
 int lpp_device_18f2xx_4xx_bulk_erase(struct lpp_context_t *context)
 {
-	/* start the transaction */
-	if (lpp_write_16(context, 0x3C0004, 0x0080) && 
-		lpp_exec_instruction(context, LPP_OP_NOP))
-	{
-		/* set up the transaction */
-		struct mc_icsp_cmd_only_t cmd_config = 
-		{
-			.command = 0x0,
-			.pgc_value_after_cmd = 0,
-			.pgd_value_after_cmd = 0,
-			.mdelay = 10, /* P11 */
-			.udelay = 0 
-		};
+    /* start the transaction */
+    if (lpp_write_16(context, 0x3C0004, 0x0080) && 
+        lpp_exec_instruction(context, LPP_OP_NOP))
+    {
+        /* set up the transaction */
+        struct mc_icsp_cmd_only_t cmd_config = 
+        {
+            .command = 0x0,
+            .pgc_value_after_cmd = 0,
+            .pgd_value_after_cmd = 0,
+            .mdelay = 10, /* P11 */
+            .udelay = 0 
+        };
 
-		/* do the command only transaction */
-		if (lpp_icsp_command_only(context, &cmd_config))
-		{
-			/* wait P10 */
-			usleep(50);
+        /* do the command only transaction */
+        if (lpp_icsp_command_only(context, &cmd_config))
+        {
+            /* wait P10 */
+            usleep(50);
 
-			/* success */
-			return 1;
-		}
-	}
+            /* success */
+            return 1;
+        }
+    }
 
-	/* failed for some reason */
-	return 0;
+    /* failed for some reason */
+    return 0;
 }
 
 /* perform erase chip without using bulk */
@@ -84,8 +84,8 @@ int lpp_device_18f2xx_4xx_non_bulk_erase(struct lpp_context_t *context)
     ret = 1;
 
     /* start by disabling multipanel writes and entering erase mode */
-	if (lpp_device_18f2xx_4xx_config_write_start(context)   &&
-		lpp_write_16(context, 0x3C0006, 0x0000))
+    if (lpp_device_18f2xx_4xx_config_write_start(context)   &&
+        lpp_write_16(context, 0x3C0006, 0x0000))
         
     {
         /* iterate through the pages */
@@ -136,18 +136,18 @@ int lpp_device_18f2xx_4xx_non_bulk_erase(struct lpp_context_t *context)
 /* start writing to code memory */
 int lpp_device_18f2xx_4xx_code_write_start(struct lpp_context_t *context)
 {
-	/* start programming */
-	return lpp_exec_instruction(context, LPP_SET_EEPGD)	&& 
-			lpp_exec_instruction(context, LPP_CLR_CFGS);
+    /* start programming */
+    return lpp_exec_instruction(context, LPP_SET_EEPGD)    && 
+            lpp_exec_instruction(context, LPP_CLR_CFGS);
 }
 
 /* start writing to config memory */
 int lpp_device_18f2xx_4xx_config_write_start(struct lpp_context_t *context)
 {
-	/* start programming */
-	return lpp_exec_instruction(context, LPP_SET_EEPGD)	&&
-			lpp_exec_instruction(context, LPP_SET_CFGS) &&
-			lpp_exec_instruction(context, LPP_SET_WREN);
+    /* start programming */
+    return lpp_exec_instruction(context, LPP_SET_EEPGD)    &&
+            lpp_exec_instruction(context, LPP_SET_CFGS) &&
+            lpp_exec_instruction(context, LPP_SET_WREN);
 }
 
 /* burn the image to the device */
@@ -157,8 +157,8 @@ int lpp_device_18f2xx_4xx_image_to_device_config(struct lpp_context_t *context,
     unsigned int ret, config_byte_idx;
 
     /* enter config write, set PC and set the config address */
-    ret = lpp_exec_instruction(context, LPP_SET_EEPGD)	                &&
-			lpp_exec_instruction(context, LPP_SET_CFGS)                 && 
+    ret = lpp_exec_instruction(context, LPP_SET_EEPGD)                    &&
+            lpp_exec_instruction(context, LPP_SET_CFGS)                 && 
             lpp_exec_instruction(context, LPP_SET_PC_100K_0)            && 
             lpp_exec_instruction(context, LPP_SET_PC_100K_1)            && 
             lpp_tblptr_set(context, context->device.config_address);
@@ -222,13 +222,13 @@ int lpp_device_18f2xx_4xx_image_to_device_config(struct lpp_context_t *context,
 int lpp_device_18f2xx_4xx_image_to_device_program(struct lpp_context_t *context, 
                                                   struct lpp_image_t *image)
 {
-	/* start by disabling multipanel writes */
-	if (lpp_device_18f2xx_4xx_config_write_start(context) &&
-		lpp_write_16(context, 0x3C0006, 0x0000))
-	{
-		/* re-use 2xxx_4xxx method */
-		return (lpp_device_18f2xxx_4xxx_image_to_device_program(context, image));
-	}
+    /* start by disabling multipanel writes */
+    if (lpp_device_18f2xx_4xx_config_write_start(context) &&
+        lpp_write_16(context, 0x3C0006, 0x0000))
+    {
+        /* re-use 2xxx_4xxx method */
+        return (lpp_device_18f2xxx_4xxx_image_to_device_program(context, image));
+    }
     else return 0;
 }
 
@@ -236,11 +236,11 @@ int lpp_device_18f2xx_4xx_image_to_device_program(struct lpp_context_t *context,
 struct lpp_device_group_t lpp_device_18f2xx_4xx = 
 {
     .open                       = lpp_device_18f2xx_4xx_open,
-	.bulk_erase 			    = lpp_device_18f2xx_4xx_bulk_erase,
-    .non_bulk_erase 		    = lpp_device_18f2xx_4xx_non_bulk_erase,
-	.image_to_device_program 	= lpp_device_18f2xx_4xx_image_to_device_program,
-    .image_to_device_config 	= lpp_device_18f2xx_4xx_image_to_device_config,
-	.code_write_start		    = lpp_device_18f2xx_4xx_code_write_start,
-	.config_write_start		    = lpp_device_18f2xx_4xx_config_write_start
+    .bulk_erase                 = lpp_device_18f2xx_4xx_bulk_erase,
+    .non_bulk_erase             = lpp_device_18f2xx_4xx_non_bulk_erase,
+    .image_to_device_program     = lpp_device_18f2xx_4xx_image_to_device_program,
+    .image_to_device_config     = lpp_device_18f2xx_4xx_image_to_device_config,
+    .code_write_start            = lpp_device_18f2xx_4xx_code_write_start,
+    .config_write_start            = lpp_device_18f2xx_4xx_config_write_start
 };
 

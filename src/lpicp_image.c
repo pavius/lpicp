@@ -75,39 +75,39 @@ void lpp_image_data_record_to_big_endian(struct lpp_context_t *context,
 
 /* handle record type */
 int lpp_image_read_handle_data_record(struct lpp_context_t *context, 
-									  struct lpp_image_t *image, 
-									  const unsigned short address_ext,
-									  IHexRecord *hex_record)
+                                      struct lpp_image_t *image, 
+                                      const unsigned short address_ext,
+                                      IHexRecord *hex_record)
 {
-	/* check address extension */
-	if (address_ext == 0)
-	{
-		/* get the address at which this block ends */
-		unsigned int write_end_address = hex_record->address + hex_record->dataLen;
+    /* check address extension */
+    if (address_ext == 0)
+    {
+        /* get the address at which this block ends */
+        unsigned int write_end_address = hex_record->address + hex_record->dataLen;
 
-		/* is there enough room for this data? */
-		if (write_end_address > image->max_contents_size)
-		{
-			/* not enough room for records */
-			printf("Not enough space @ address %04X\n", hex_record->address);
-			goto err_not_enough_space;
-		}
+        /* is there enough room for this data? */
+        if (write_end_address > image->max_contents_size)
+        {
+            /* not enough room for records */
+            printf("Not enough space @ address %04X\n", hex_record->address);
+            goto err_not_enough_space;
+        }
 
         /* convert record to big endian */
         lpp_image_data_record_to_big_endian(context, hex_record);
 
         /* read the record to the proper offset */
-		memcpy(image->contents + hex_record->address, 
-			   hex_record->data, 
-			   hex_record->dataLen);
+        memcpy(image->contents + hex_record->address, 
+               hex_record->data, 
+               hex_record->dataLen);
 
-		/* check if we passed the high address watermark */
-		if (write_end_address > image->contents_size) 
-			image->contents_size = write_end_address;
-	}
-	/* config space. TODO: make device unspecific */
-	else if (address_ext == 0x3000)
-	{
+        /* check if we passed the high address watermark */
+        if (write_end_address > image->contents_size) 
+            image->contents_size = write_end_address;
+    }
+    /* config space. TODO: make device unspecific */
+    else if (address_ext == 0x3000)
+    {
         /* write to configuration */
         if ((hex_record->address + hex_record->dataLen) <= sizeof(image->config))
         {
@@ -129,109 +129,109 @@ int lpp_image_read_handle_data_record(struct lpp_context_t *context,
         }
         /* can't store this, not supported */
         else goto err_not_enough_space;
-	}
+    }
 
-	/* done */
-	return 1;
+    /* done */
+    return 1;
 
 err_not_enough_space:
-	return 0;
+    return 0;
 }
 
 /* read a file into an image */
 int lpp_image_read_from_file(struct lpp_context_t *context, 
-							 struct lpp_image_t *image, 
-							 const char *file_name)
+                             struct lpp_image_t *image, 
+                             const char *file_name)
 {
-	FILE *hex_file;
-	IHexRecord hex_record;
-	enum IHexErrors record_read_result;
-	unsigned short address_ext = 0;
+    FILE *hex_file;
+    IHexRecord hex_record;
+    enum IHexErrors record_read_result;
+    unsigned short address_ext = 0;
 
-	/* try to open the file */
-	hex_file = fopen(file_name, "r");
+    /* try to open the file */
+    hex_file = fopen(file_name, "r");
 
-	/* success? */
-	if (hex_file)
-	{
-		/* read records */
-		while (1)
-		{
-			/* read the record */
-			record_read_result = Read_IHexRecord(&hex_record, hex_file);
+    /* success? */
+    if (hex_file)
+    {
+        /* read records */
+        while (1)
+        {
+            /* read the record */
+            record_read_result = Read_IHexRecord(&hex_record, hex_file);
 
-			/* if no error, read to image */
-			if (record_read_result == IHEX_OK)
-			{
-				/* data record */
-				if (hex_record.type == IHEX_TYPE_00)
-				{
-					/* handle the data record */
-					if (!lpp_image_read_handle_data_record(context, image, address_ext, &hex_record))
-					{
-						/* error */
-						goto err_handling_data_record;
-					}
-				}
-				/* set address MSb */
-				else if (hex_record.type == IHEX_TYPE_04)
-				{
+            /* if no error, read to image */
+            if (record_read_result == IHEX_OK)
+            {
+                /* data record */
+                if (hex_record.type == IHEX_TYPE_00)
+                {
+                    /* handle the data record */
+                    if (!lpp_image_read_handle_data_record(context, image, address_ext, &hex_record))
+                    {
+                        /* error */
+                        goto err_handling_data_record;
+                    }
+                }
+                /* set address MSb */
+                else if (hex_record.type == IHEX_TYPE_04)
+                {
                     /* set the extended address */
                     address_ext = hex_record.data[0];
                     address_ext |= (hex_record.data[1] << 8);
-				}
-				/* end record */
-				else if (hex_record.type == IHEX_TYPE_01)
-				{
-					break;
-				}
-			}
-			/* end of file? */
-			else if (record_read_result == IHEX_ERROR_EOF)
-			{
-				/* if we got here, we're done */
-				break;
-			}
-			/* some other error */
-			else
-			{
-				/* error */
-				printf("Failed to parse file. err(%d)\n", record_read_result);
-				goto err_parse_file;
-			}
-		}
-	}
-	else
-	{
-		/* error */
-		printf("Failed to open file @ %s\n", file_name);
-		goto err_alloc_open_file;
-	}
+                }
+                /* end record */
+                else if (hex_record.type == IHEX_TYPE_01)
+                {
+                    break;
+                }
+            }
+            /* end of file? */
+            else if (record_read_result == IHEX_ERROR_EOF)
+            {
+                /* if we got here, we're done */
+                break;
+            }
+            /* some other error */
+            else
+            {
+                /* error */
+                printf("Failed to parse file. err(%d)\n", record_read_result);
+                goto err_parse_file;
+            }
+        }
+    }
+    else
+    {
+        /* error */
+        printf("Failed to open file @ %s\n", file_name);
+        goto err_alloc_open_file;
+    }
 
-	/* close file */
-	fclose(hex_file);
+    /* close file */
+    fclose(hex_file);
 
-	/* success */
-	return 1;
+    /* success */
+    return 1;
 
 err_handling_data_record:
 err_parse_file:
-	fclose(hex_file);
+    fclose(hex_file);
 err_alloc_open_file:
-	return 0;	
+    return 0;    
 }
 
 /* write the image to file */
 int lpp_image_write_to_file(struct lpp_context_t *context, 
-							 struct lpp_image_t *image, 
-							 const char *file_name)
+                             struct lpp_image_t *image, 
+                             const char *file_name)
 {
-	/* TODO */
+    /* TODO */
 }
 
 /* print an image to stdout */
 int lpp_image_print(struct lpp_context_t *context, 
-					struct lpp_image_t *image)
+                    struct lpp_image_t *image)
 {
     unsigned int byte_idx, row_address, config_byte_idx;
     const unsigned int row_byte_count = 16;

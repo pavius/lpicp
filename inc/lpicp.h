@@ -24,29 +24,29 @@ struct lpp_image_t;
 #define LPP_REG_TBLPTRL (0xF6)
 
 /* PIC opcodes */
-#define LPP_OP_MOVLW(value)				((0x0E << 8) | (value))
-#define LPP_OP_MOVWF(register_address)	((0x6E << 8) | (register_address))
-#define LPP_OP_NOP						(0x0)
-#define LPP_SET_EEPGD					(0x8EA6)
-#define LPP_SET_CFGS					(0x8CA6)
-#define LPP_CLR_CFGS					(0x9CA6)
-#define LPP_SET_WREN					(0x86A6)
-#define LPP_SET_FREE					(0x88A6)
-#define LPP_INC_TBLPTRL					(0x2AF6)
-#define LPP_SET_PC_100K_0               (0xEF00)
-#define LPP_SET_PC_100K_1               (0xF800)
+#define LPP_OP_MOVLW(value)                 ((0x0E << 8) | (value))
+#define LPP_OP_MOVWF(register_address)      ((0x6E << 8) | (register_address))
+#define LPP_OP_NOP                          (0x0)
+#define LPP_SET_EEPGD                       (0x8EA6)
+#define LPP_SET_CFGS                        (0x8CA6)
+#define LPP_CLR_CFGS                        (0x9CA6)
+#define LPP_SET_WREN                        (0x86A6)
+#define LPP_SET_FREE                        (0x88A6)
+#define LPP_INC_TBLPTRL                     (0x2AF6)
+#define LPP_SET_PC_100K_0                   (0xEF00)
+#define LPP_SET_PC_100K_1                   (0xF800)
 
 /* ICSP commands */
-#define LPP_ICSP_CMD_CORE_INST				(0x0) // 0000
-#define LPP_ICSP_CMD_SHIFT_TABLAT_REG		(0x2) // 0010
-#define LPP_ICSP_CMD_TBL_RD					(0x8) // 1000
-#define LPP_ICSP_CMD_TBL_RD_POST_INC		(0x9) // 1001
-#define LPP_ICSP_CMD_TBL_RD_POST_DEC		(0xA) // 1010
-#define LPP_ICSP_CMD_TBL_RD_PRE_INC			(0xB) // 1011
-#define LPP_ICSP_CMD_TBL_WR_POST_INC		(0xC) // 1100
-#define LPP_ICSP_CMD_TBL_WR_POST_INC_2		(0xD) // 1101
+#define LPP_ICSP_CMD_CORE_INST              (0x0) // 0000
+#define LPP_ICSP_CMD_SHIFT_TABLAT_REG       (0x2) // 0010
+#define LPP_ICSP_CMD_TBL_RD                 (0x8) // 1000
+#define LPP_ICSP_CMD_TBL_RD_POST_INC        (0x9) // 1001
+#define LPP_ICSP_CMD_TBL_RD_POST_DEC        (0xA) // 1010
+#define LPP_ICSP_CMD_TBL_RD_PRE_INC         (0xB) // 1011
+#define LPP_ICSP_CMD_TBL_WR_POST_INC        (0xC) // 1100
+#define LPP_ICSP_CMD_TBL_WR_POST_INC_2      (0xD) // 1101
 #define LPP_ICSP_CMD_TBL_WR_PROG_POST_INC_2 (0xE) // 1110
-#define LPP_ICSP_CMD_TBL_WR_PROG			(0xF) // 1111
+#define LPP_ICSP_CMD_TBL_WR_PROG            (0xF) // 1111
 
 /* notification callback types */
 typedef int (*ntfy_progress_t)(struct lpp_context_t *, const unsigned int, const unsigned int);
@@ -54,12 +54,12 @@ typedef int (*ntfy_progress_t)(struct lpp_context_t *, const unsigned int, const
 /* lpp context */
 struct lpp_context_t
 {
-	struct lpp_log_record_t		*log_records;
-	unsigned int				log_record_count;
-	unsigned int				log_current_idx;
-	char						*icsp_dev_name;
-	int							icsp_dev_file;
-	struct lpp_device_t			device;
+    struct lpp_log_record_t     *log_records;
+    unsigned int                log_record_count;
+    unsigned int                log_current_idx;
+    char                        *icsp_dev_name;
+    int                         icsp_dev_file;
+    struct lpp_device_t         device;
 
     /* notifications */
     ntfy_progress_t             ntfy_progress;
@@ -67,8 +67,8 @@ struct lpp_context_t
 
 /* initialize a context */
 int lpp_context_init(struct lpp_context_t *context, 
-					 const enum lpp_device_family_type_t family,
-					 char *icsp_dev_name,
+                     const enum lpp_device_family_type_t family,
+                     char *icsp_dev_name,
                      ntfy_progress_t ntfy_progress);
 
 /* destroy a context */
@@ -97,24 +97,24 @@ int lpp_read_device_program_to_image(struct lpp_context_t *context,
 
 /* read the image program from the device */
 int lpp_read_device_config_to_image(struct lpp_context_t *context,
-									struct lpp_image_t *image);
+                                    struct lpp_image_t *image);
 
 /* execute an instruction */
 int lpp_exec_instruction(struct lpp_context_t *context,
-						 const unsigned short instuction);
+                         const unsigned short instuction);
 
 /* write 16 bits of data to a specified address */
 int lpp_write_16(struct lpp_context_t *context,
-				 const unsigned int address,
-				 const unsigned short data);
+                 const unsigned int address,
+                 const unsigned short data);
 
 /* read 16 bits of data from a specified address */
 int lpp_read_16(struct lpp_context_t *context,
-				 const unsigned int address,
-				 unsigned short *data);
+                 const unsigned int address,
+                 unsigned short *data);
 
 /* set tbpltr register */
 int lpp_tblptr_set(struct lpp_context_t *context,
-				   const unsigned int value);
+                   const unsigned int value);
 
 #endif /* __LPICPC_H */
