@@ -238,9 +238,9 @@ struct lpp_device_group_t lpp_device_18f2xx_4xx =
     .open                       = lpp_device_18f2xx_4xx_open,
     .bulk_erase                 = lpp_device_18f2xx_4xx_bulk_erase,
     .non_bulk_erase             = lpp_device_18f2xx_4xx_non_bulk_erase,
-    .image_to_device_program     = lpp_device_18f2xx_4xx_image_to_device_program,
+    .image_to_device_program    = lpp_device_18f2xx_4xx_image_to_device_program,
     .image_to_device_config     = lpp_device_18f2xx_4xx_image_to_device_config,
-    .code_write_start            = lpp_device_18f2xx_4xx_code_write_start,
-    .config_write_start            = lpp_device_18f2xx_4xx_config_write_start
+    .code_write_start           = lpp_device_18f2xx_4xx_code_write_start,
+    .config_write_start         = lpp_device_18f2xx_4xx_config_write_start
 };
 

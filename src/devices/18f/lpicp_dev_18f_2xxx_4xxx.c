@@ -157,7 +157,7 @@ struct lpp_device_group_t lpp_device_18f2xxx_4xxx =
 {
     .open                       = lpp_device_18f2xxx_4xxx_bulk_open,
     .bulk_erase                 = lpp_device_18f2xxx_4xxx_bulk_erase,
-    .image_to_device_program     = lpp_device_18f2xxx_4xxx_image_to_device_program,
+    .image_to_device_program    = lpp_device_18f2xxx_4xxx_image_to_device_program,
     .image_to_device_config     = lpp_device_18f2xxx_4xxx_image_to_device_config,
 };
 
