@@ -61,7 +61,7 @@ void lpicp_main_init_default_config(struct lpp_config_t *config)
 /* print usage */
 void lpicp_main_usage(void)
 {
-	printf("Linux PIC Programmer v.%s\n", version_string);
+	printf("Linux PIC Programmer v.%s (Compiled " __DATE__ " " __TIME__ ")\n", version_string);
 	printf("Usage: lpicp [options]\n");
 	printf("  -x, --exec            r, read | w, write | e, erase | devid\n");
 	printf("  -d, --dev             ICSP device name (e.g. /dev/icsp0)\n");
@@ -306,6 +306,9 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
         goto err_init_image;
     }
 
+    /* space out */
+    printf("\n");
+
     /* 
      * Verify image
      */
@@ -327,6 +330,7 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
                    cmp_result == 0 ? "success" : "failed",
                    image.contents_size);
     
+#if 0
             /* print image */
             printf("File (%d bytes):\n", image.contents_size);
             lpp_image_print(context, &image);
@@ -334,7 +338,7 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
             /* print image */
             printf("Device (%d bytes):\n", verify_image.contents_size);
             lpp_image_print(context, &verify_image);
-    
+#endif    
             /* return compare result */
             ret = (cmp_result == 0);
         }

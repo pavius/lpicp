@@ -130,12 +130,12 @@ int lpp_device_18f2xxx_4xxx_image_to_device_program(struct lpp_context_t *contex
 				.pgc_value_after_cmd = 1,
 				.pgd_value_after_cmd = 0,
 				.mdelay = 1, /* P9 */
-				.udelay = 250 /* add a bit to P9 */ 
+				.udelay = 0
 			};
 
 			/* send special command only, then wait P10, then 16 0s of data */
-			ret = lpp_icsp_command_only(context, &cmd_config) && 
-                    lpp_icsp_delay_us(context, 5) && 
+			ret = lpp_icsp_command_only(context, &cmd_config)   && 
+                    lpp_icsp_delay_us(context, 5)               && 
                     lpp_icsp_data_only(context, 0x0);
 
             /* progress notification */
