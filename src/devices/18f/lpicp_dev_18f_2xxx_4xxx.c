@@ -116,7 +116,7 @@ int lpp_device_18f2xxx_4xxx_image_to_device_program(struct lpp_context_t *contex
 			unsigned char command = (word_index != (words_to_write - 1)) ? 
 										LPP_ICSP_CMD_TBL_WR_POST_INC_2 : LPP_ICSP_CMD_TBL_WR_PROG;
 
-			/* set address and write data */
+			/* write data */
 			ret = lpp_icsp_write_16(context, command, *current_data++);
 		}
 
