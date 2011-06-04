@@ -275,54 +275,86 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
 								   struct lpp_config_t *config)
 {
 	struct lpp_image_t image, verify_image;
+    int ret;
 
-    /* initialize images */
-    lpp_image_init(context, &image);
-    lpp_image_init(context, &verify_image);
+    /* return error, by default */
+    ret = 0;
 
-	/* read the file and write to device */
-	if (lpp_image_read_from_file(context, &image, config->file_name, context->device.code_memory_size)  &&
-		lpicp_progress_init("Writing")                                                                  &&
-        lpp_write_image_to_device_program(context, &image)                                              &&
-        lpp_write_image_to_device_config(context, &image))
-	{
-        /* space out */
-        printf("\n");
+    /* 
+     * Write image to flash
+     */
 
-        /* now try to read */
-        if (lpicp_progress_init("Reading")                                            && 
+    /* try to allocate image */
+    if (lpp_image_init(context, &image, context->device.code_memory_size))
+    {
+        /* read the file and write to device */
+        if (!(lpp_image_read_from_file(context, &image, config->file_name)  &&
+              lpicp_progress_init("Writing")                                &&
+              lpp_write_image_to_device_program(context, &image)            &&
+              lpp_write_image_to_device_config(context, &image)))
+        {
+            /* error writing file */
+            printf("Error writing file\n");
+
+            /* set error */
+            goto err_writing_file;
+        }
+    }
+    else
+    {
+        /* set error */
+        goto err_init_image;
+    }
+
+    /* 
+     * Verify image
+     */
+     
+    /* initialize verification image */
+    if (lpp_image_init(context, &verify_image, image.contents_size))
+    {
+        /* try to read */
+        if (lpicp_progress_init("Reading")                                                      && 
             lpp_read_device_program_to_image(context, 0, image.contents_size, &verify_image))
         {
             /* compare them */
             int cmp_result = memcmp(image.contents, 
                                     verify_image.contents, 
                                     image.contents_size);
-
+    
             /* print result */
             printf("\nVerification %s (%d bytes compared)\n", 
                    cmp_result == 0 ? "success" : "failed",
                    image.contents_size);
-
+    
             /* print image */
             printf("File (%d bytes):\n", image.contents_size);
             lpp_image_print(context, &image);
-
+    
             /* print image */
             printf("Device (%d bytes):\n", verify_image.contents_size);
             lpp_image_print(context, &verify_image);
-
+    
             /* return compare result */
-            return (cmp_result == 0);
+            ret = (cmp_result == 0);
         }
-	}
-	else
-	{
-		/* error writing file */
-		printf("Error writing file\n");
-	}
+    }
+    else
+    {
+        /* set error */
+        goto err_init_verify_image;
+    }
 
-    /* error */
-    return 0;
+    /* free verification image*/
+    lpp_image_destroy(context, &verify_image);
+
+err_init_verify_image:
+err_writing_file:
+    lpp_image_destroy(context, &image);
+err_init_image:
+
+    /* return result */
+    return ret;
 }
 
 /* do read */
@@ -330,33 +362,51 @@ int lpicp_main_execute_image_read(struct lpp_context_t *context,
 								  struct lpp_config_t *config)
 {
 	struct lpp_image_t image;
+    int ret;
 
-    /* size to read */
+    /* error by default */
+    ret = 0;
+
+    /* size to read (either specifed by user or program memory size of device if user
+     * doesn't specify
+     */
     unsigned int size = (config->size == 0 ? context->device.code_memory_size : config->size);
 
     /* initialize image */
-    lpp_image_init(context, &image);
+    if (lpp_image_init(context, &image, size))
+    {
+        /* try to read the image */
+        if (lpicp_progress_init("Reading")                              && 
+            lpp_read_device_program_to_image(context, 0, size, &image)  &&
+            lpp_read_device_config_to_image(context, &image)            &&
+            lpp_image_write_to_file(context, &image, config->file_name))
+        {
+            /* print image */
+            lpp_image_print(context, &image);
+    
+            /* success */
+            ret = 1;
+        }
+        else
+        {
+            /* error writing file */
+            printf("\nError reading file from device\n");
+        }
+    }
+    else
+    {
+        /* log */
+        printf("Error allocating image\n");
 
-	/* try to read the image */
-	if (lpicp_progress_init("Reading")                              && 
-        lpp_read_device_program_to_image(context, 0, size, &image)  &&
-        lpp_read_device_config_to_image(context, &image)            &&
-		lpp_image_write_to_file(context, &image, config->file_name))
-	{
-        /* print image */
-        lpp_image_print(context, &image);
+        /* */
+        goto err_init_image;
+    }
 
-        /* success */
-		return 1;
-	}
-	else
-	{
-		/* error writing file */
-		printf("\nError reading file from device\n");
+    /* free image */
+    lpp_image_destroy(context, &image);
 
-		/* error */
-		return 0;
-	}
+err_init_image:
+    return ret;
 }
 
 /* before each operation */
@@ -456,7 +506,7 @@ int lpicp_main_execute_config(struct lpp_config_t *config)
         timersub(&end_time, &start_time, &diff_time);
 
         /* print time */
-        if (ret) printf("Done successfully in %d.%03ds\n", diff_time.tv_sec, diff_time.tv_usec / 1000);
+        if (ret) printf("Done successfully in %d.%03ds\n", (int)diff_time.tv_sec, (int)(diff_time.tv_usec / 1000));
 
 		/* print log if verbose */
 		if (config->verbose)

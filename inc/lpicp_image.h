@@ -29,14 +29,18 @@ struct lpp_image_t
 };
 
 /* initialize an image */
-void lpp_image_init(struct lpp_context_t *context, 
-                    struct lpp_image_t *image);
+int lpp_image_init(struct lpp_context_t *context, 
+                   struct lpp_image_t *image,
+                   const unsigned int max_size);
+
+/* destroy an image */
+int lpp_image_destroy(struct lpp_context_t *context, 
+                      struct lpp_image_t *image);
 
 /* read a file into an image */
 int lpp_image_read_from_file(struct lpp_context_t *context, 
 							 struct lpp_image_t *image, 
-							 const char *file_name,
-							 const unsigned int max_image_size);
+							 const char *file_name);
 
 /* print an image to stdout */
 int lpp_image_print(struct lpp_context_t *context, 

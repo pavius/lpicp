@@ -15,9 +15,38 @@
 #include <stdio.h>
 
 /* initialize an image */
-void lpp_image_init(struct lpp_context_t *context, 
-                    struct lpp_image_t *image)
+int lpp_image_init(struct lpp_context_t *context, 
+                   struct lpp_image_t *image,
+                   const unsigned int max_size)
 {
+    /* zero out the image */
+    memset(image, 0, sizeof(struct lpp_image_t));
+
+    /* allocate contents */
+    image->contents = malloc(max_size);
+    
+    /* check allocation */
+    if (image->contents != NULL)
+    {
+        /* init buffer */
+        memset(image->contents, 0xFF, max_size);
+
+        /* save sizes */
+        image->max_contents_size = max_size;
+    }
+}
+
+/* destroy an image */
+int lpp_image_destroy(struct lpp_context_t *context, 
+                      struct lpp_image_t *image)
+{                   
+    /* check if we have contents */
+    if (image->contents != NULL)
+    {
+        /* free the image */
+        free(image->contents);
+    }
+
     /* zero out the image */
     memset(image, 0, sizeof(struct lpp_image_t));
 }
@@ -112,8 +141,7 @@ err_not_enough_space:
 /* read a file into an image */
 int lpp_image_read_from_file(struct lpp_context_t *context, 
 							 struct lpp_image_t *image, 
-							 const char *file_name,
-							 const unsigned int max_image_size)
+							 const char *file_name)
 {
 	FILE *hex_file;
 	IHexRecord hex_record;
@@ -126,22 +154,6 @@ int lpp_image_read_from_file(struct lpp_context_t *context,
 	/* success? */
 	if (hex_file)
 	{
-		/* allocate enough memory to hold the file */
-		image->contents = malloc(max_image_size);
-
-		/* succeeded? */
-		if (image->contents == NULL)
-		{
-			/* error */
-			printf("Failed to allocate %d bytes for contents\n", max_image_size);
-			goto err_alloc_contents;
-		}
-
-		/* initialize counters and contents */
-		memset(image->contents, 0xFF, max_image_size);
-		image->max_contents_size = max_image_size;
-		image->contents_size = 0;
-
 		/* read records */
 		while (1)
 		{
@@ -204,8 +216,6 @@ int lpp_image_read_from_file(struct lpp_context_t *context,
 
 err_handling_data_record:
 err_parse_file:
-	free(image->contents);
-err_alloc_contents:
 	fclose(hex_file);
 err_alloc_open_file:
 	return 0;	
