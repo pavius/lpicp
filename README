@@ -4,7 +4,7 @@ Copyright (c) 2011 Eran Duchan <pavius@gmail.com>
 This program is free software; you can redistribute  it and/or modify
 it under the terms of the GNU General Public License, version 2, as
 published by the Free Software Foundation.
-----------------------------------------------------------------------
+---------------------------------------------------------------------
 
 == About ==
 In its current form, supports reading, erasing and writing program and config memory 
@@ -22,3 +22,9 @@ To compile for ppc:
 - cd to build/ppc/debug
 - cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../tc-eldk-ppc-8xx.cmake -DCMAKE_BUILD_TYPE=Debug
 - make
+
+== Still to do ==
+- Read/Program EEPROM
+- Program at offset/selective program
+- Read to HEX record
+- Much, much more devices
