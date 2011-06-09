@@ -23,8 +23,8 @@ To compile for ppc:
 - cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../tc-eldk-ppc-8xx.cmake -DCMAKE_BUILD_TYPE=Debug
 - make
 
-== Still to do ==
+== Not implemented yet ==
 - Read/Program EEPROM
 - Program at offset/selective program
 - Read to HEX record
-- Much, much more devices
+
