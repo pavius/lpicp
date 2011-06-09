@@ -525,7 +525,7 @@ int lpicp_main_execute_config(struct lpp_config_t *config)
     else
     {
         /* no device found */
-        printf("Failed to supported device\n");
+        printf("Failed to find supported device\n");
 
         /* set err */
         ret = 1;

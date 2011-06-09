@@ -1,3 +1,25 @@
-Currently work in progress. 
-Will eventually work together with an ICSP bit banging driver to allow processors running embedded linux to read and program PIC devices (who support low voltage programming and have their PGM, MCLR, PGD, PGC pins connected to the processor's GPIOs). 
+lpicp: The embedded Linux PIC programmer
+Copyright (c) 2011 Eran Duchan <pavius@gmail.com>
+---------------------------------------------------------------------
+This program is free software; you can redistribute  it and/or modify
+it under the terms of the GNU General Public License, version 2, as
+published by the Free Software Foundation.
+----------------------------------------------------------------------
 
+== About:
+In its current form, supports reading, erasing and writing program and 
+config memory for the following devices:
+- PIC18F452
+- PIC18F4520
+
+See the following page to download the ICSP kernel driver and a bit
+of documentation:
+
+http://www.pavius.net/2011/06/lpicp-the-embedded-linux-pic-programmer/
+
+== Compiling:
+The build environment supports both running on x86 (without the ICSP driver)
+and ppc (with it). To compile for ppc:
+- cd to build/ppc/debug
+- cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../tc-eldk-ppc-8xx.cmake -DCMAKE_BUILD_TYPE=Debug
+- make
