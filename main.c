@@ -20,7 +20,7 @@
 #include "lpicp_image.h"
 
 /* current version */
-const char *version_string = "0.0.1";
+const char *version_string = "0.0.2";
 
 /* to show progress */
 static unsigned int lpicp_progress_current_bytes = 0;
@@ -291,7 +291,8 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
         if (!(lpp_image_read_from_file(context, &image, config->file_name)  &&
               lpicp_progress_init("Writing")                                &&
               lpp_write_image_to_device_program(context, &image)            &&
-              lpp_write_image_to_device_config(context, &image)))
+              lpp_write_image_to_device_config(context, &image)             &&
+              lpp_read_image_to_device_eeprom(context, &image)))
         {
             /* error writing file */
             printf("Error writing file\n");
@@ -318,17 +319,17 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
     {
         /* try to read */
         if (lpicp_progress_init("Reading")                                                      && 
-            lpp_read_device_program_to_image(context, 0, image.contents_size, &verify_image))
+            lpp_read_device_program_to_image(context, 0, image.contents_size, &verify_image)    &&
+            lpp_read_device_eeprom_to_image(context, &verify_image))
         {
             /* compare them */
-            int cmp_result = memcmp(image.contents, 
-                                    verify_image.contents, 
-                                    image.contents_size);
+            int cmp_result = memcmp(image.contents, verify_image.contents, image.contents_size) == 0 &&
+                             memcmp(image.eeprom, verify_image.eeprom, context->device.eeprom_bytes) == 0;
     
             /* print result */
-            printf("\nVerification %s (%d bytes compared)\n", 
-                   cmp_result == 0 ? "success" : "failed",
-                   image.contents_size);
+            printf("\nVerification %s (%d program + %d EEPROM bytes compared)\n", 
+                   cmp_result ? "success" : "failed",
+                   image.contents_size, context->device.eeprom_bytes);
     
 #if 0
             /* print image */
@@ -383,6 +384,7 @@ int lpicp_main_execute_image_read(struct lpp_context_t *context,
         if (lpicp_progress_init("Reading")                              && 
             lpp_read_device_program_to_image(context, 0, size, &image)  &&
             lpp_read_device_config_to_image(context, &image)            &&
+            lpp_read_device_eeprom_to_image(context, &image)            &&
             lpp_image_write_to_file(context, &image, config->file_name))
         {
             /* print image */
@@ -466,7 +468,7 @@ int lpicp_main_execute_config(struct lpp_config_t *config)
         if (config->verbose)
         {
             /* try to init log */
-            if (!lpp_log_init(&context, 512))
+            if (!lpp_log_init(&context, 4096))
             {
                 /* set err */
                 ret = 0;

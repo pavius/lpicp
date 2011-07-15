@@ -17,7 +17,7 @@
 #include "lpicp_log.h"
 
 /* simulate. TODO: proper */
-// #define ioctl(x, y, z) (0)
+/* #define ioctl(x, y, z) (0) */
 
 /* open access to driver */
 int lpp_icsp_init(struct lpp_context_t *context, char *icsp_dev_name)

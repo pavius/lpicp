@@ -32,6 +32,8 @@ int lpp_device_18f2xx_4xx_open(struct lpp_context_t *context)
             context->device.code_memory_size       = 32 * 1024;
             context->device.config_address         = 0x300000;
             context->device.config_bytes           = 14;
+            context->device.eeprom_address         = 0xF00000;
+            context->device.eeprom_bytes           = 256;
             context->device.name                   = "PIC18F452";
             break;
 
@@ -232,6 +234,117 @@ int lpp_device_18f2xx_4xx_image_to_device_program(struct lpp_context_t *context,
     else return 0;
 }
 
+/* read the device eeprom to the image */
+int lpp_device_18f2xx_4xx_device_eeprom_to_image(struct lpp_context_t *context, 
+                                                 struct lpp_image_t *image)
+{
+    unsigned int eeprom_byte_idx, ret;
+
+    /* enter EEPROM */
+    ret = lpp_exec_instruction(context, LPP_CLR_EEPGD) &&
+          lpp_exec_instruction(context, LPP_CLR_CFGS);
+
+    /* success? */
+    if (ret)
+    {
+        /* start reading, one byte at a time */
+        for (eeprom_byte_idx = 0; 
+              eeprom_byte_idx < context->device.eeprom_bytes && ret; 
+              ++eeprom_byte_idx)
+        {
+            /* set the EEPROM address pointer (lowest first) */
+            ret = lpp_exec_instruction(context, LPP_OP_MOVLW((eeprom_byte_idx >> 0) & 0xFF))    && 
+                  lpp_exec_instruction(context, LPP_OP_MOVWF(LPP_REG_EEADR))                    && 
+                  lpp_exec_instruction(context, LPP_OP_MOVLW((eeprom_byte_idx >> 8) & 0xFF))    &&
+                  lpp_exec_instruction(context, LPP_OP_MOVWF(LPP_REG_EEADRH));
+
+            /* check if we succeeded */
+            if (ret)
+            {
+                /* do the read into EEDATA, move that into TABLAT and read that */
+                ret = lpp_exec_instruction(context, LPP_SET_EECON1_RD)                      &&
+                      lpp_exec_instruction(context, LPP_MOVF_EEDATA_W)                      &&
+                      lpp_exec_instruction(context, LPP_OP_MOVWF(LPP_REG_TABLAT))           &&
+                      lpp_icsp_read_8(context, LPP_ICSP_CMD_SHIFT_TABLAT_REG, &image->eeprom[eeprom_byte_idx]);
+            }
+        }
+    }
+}
+
+/* read the image to device  */
+int lpp_device_18f2xx_4xx_image_to_device_eeprom(struct lpp_context_t *context, 
+                                                 struct lpp_image_t *image)
+{
+    unsigned int eeprom_byte_idx, ret;
+    unsigned char eecon1, write_complete;
+    unsigned int eeprom_wait_time_ticks;
+
+    /* enter EEPROM */
+    ret = lpp_exec_instruction(context, LPP_CLR_EEPGD) &&
+          lpp_exec_instruction(context, LPP_CLR_CFGS);
+
+    /* success? */
+    if (ret)
+    {
+        /* start reading, one byte at a time */
+        for (eeprom_byte_idx = 0; 
+              eeprom_byte_idx < context->device.eeprom_bytes && ret; 
+              ++eeprom_byte_idx)
+        {
+            
+            /* set the EEPROM address pointer (lowest first) */
+            if (lpp_exec_instruction(context, LPP_OP_MOVLW((eeprom_byte_idx >> 0) & 0xFF))    && 
+                lpp_exec_instruction(context, LPP_OP_MOVWF(LPP_REG_EEADR))                    && 
+                lpp_exec_instruction(context, LPP_OP_MOVLW((eeprom_byte_idx >> 8) & 0xFF))    &&
+                lpp_exec_instruction(context, LPP_OP_MOVWF(LPP_REG_EEADRH)))
+            {
+                /* write the byte */
+                ret = lpp_exec_instruction(context, LPP_OP_MOVLW(image->eeprom[eeprom_byte_idx])) &&
+                      lpp_exec_instruction(context, LPP_OP_MOVWF(LPP_REG_EEDATA))                 &&   
+                      lpp_exec_instruction(context, LPP_SET_EECON1_WREN)                          &&
+                      lpp_exec_instruction(context, LPP_OP_MOVLW(0x55))                           && 
+                      lpp_exec_instruction(context, LPP_OP_MOVWF(LPP_REG_EECON2))                 && 
+                      lpp_exec_instruction(context, LPP_OP_MOVLW(0xAA))                           &&
+                      lpp_exec_instruction(context, LPP_OP_MOVWF(LPP_REG_EECON2))                 &&
+                      lpp_exec_instruction(context, LPP_SET_EECON1_WR);
+                
+                /* init write compelte */
+                write_complete = 0;
+
+                /* while WR bit is set to 1 and not timed out */
+                for (eeprom_wait_time_ticks = 100;
+                     ret && !write_complete && eeprom_wait_time_ticks;
+                     eeprom_wait_time_ticks--)
+                {
+                    /* get WR bit */
+                    ret = (lpp_exec_instruction(context, LPP_MOVF_EECON1_W)                      &&
+                           lpp_exec_instruction(context, LPP_OP_MOVWF(LPP_REG_TABLAT))           &&
+                           lpp_icsp_read_8(context, LPP_ICSP_CMD_SHIFT_TABLAT_REG, &eecon1));
+
+                    /* if we read OK, check if write complete */
+                    if (ret) 
+                    {
+                        /* check if WR clear */
+                        write_complete = ((eecon1 & 0x2) == 0);
+
+                        /* wait a bit */
+                        if (!write_complete) usleep(1000);
+                    }
+                }
+
+                /* if timed out, return error */
+                ret = (ret && (eeprom_wait_time_ticks == 0) ? 0 : 1);
+            }
+        }
+
+        /* disable writes if no error occured */
+        if (ret) ret = lpp_exec_instruction(context, LPP_CLR_EECON1_WREN);
+    }
+
+    /* return result */
+    return ret;
+}
+
 /* operations */
 struct lpp_device_group_t lpp_device_18f2xx_4xx = 
 {
@@ -241,6 +354,8 @@ struct lpp_device_group_t lpp_device_18f2xx_4xx =
     .image_to_device_program    = lpp_device_18f2xx_4xx_image_to_device_program,
     .image_to_device_config     = lpp_device_18f2xx_4xx_image_to_device_config,
     .code_write_start           = lpp_device_18f2xx_4xx_code_write_start,
-    .config_write_start         = lpp_device_18f2xx_4xx_config_write_start
+    .config_write_start         = lpp_device_18f2xx_4xx_config_write_start,
+    .device_eeprom_to_image     = lpp_device_18f2xx_4xx_device_eeprom_to_image,
+    .image_to_device_eeprom     = lpp_device_18f2xx_4xx_image_to_device_eeprom
 };
 

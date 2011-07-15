@@ -21,8 +21,13 @@ extern struct lpp_device_group_t lpp_device_18f2xxx_4xxx;
 /* read device id */
 int lpp_device_id_read(struct lpp_context_t *context, unsigned short *device_id)
 {
+#if 1
     /* return result */
     return lpp_read_16(context, 0x3FFFFE, device_id);
+#else
+    *device_id = 0x2004;
+    return 1;
+#endif
 }
 
 /* get device structure by type */

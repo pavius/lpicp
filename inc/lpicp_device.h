@@ -29,6 +29,8 @@ struct lpp_device_group_t
     int (*image_to_device_config)(struct lpp_context_t *, struct lpp_image_t *);
     int (*code_write_start)(struct lpp_context_t *);
     int (*config_write_start)(struct lpp_context_t *);
+    int (*device_eeprom_to_image)(struct lpp_context_t *, struct lpp_image_t *);
+    int (*image_to_device_eeprom)(struct lpp_context_t *, struct lpp_image_t *);
 };
 
 /* operations */
@@ -41,6 +43,8 @@ struct lpp_device_t
     unsigned int        code_erase_page_size;
     unsigned int        config_address;
     unsigned int        config_bytes;
+    unsigned int        eeprom_address;
+    unsigned int        eeprom_bytes;
 
     /* pointer to anything common to the group */
     struct lpp_device_group_t *group;

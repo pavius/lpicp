@@ -207,7 +207,7 @@ int lpp_read_device_program_to_image(struct lpp_context_t *context,
     return ret;
 }
 
-/* read the image program from the device */
+/* read the image config from the device */
 int lpp_read_device_config_to_image(struct lpp_context_t *context,
                                     struct lpp_image_t *image)
 {
@@ -233,3 +233,20 @@ int lpp_read_device_config_to_image(struct lpp_context_t *context,
     /* done */
     return ret;
 }
+
+/* read the image eeprom from the device */
+int lpp_read_device_eeprom_to_image(struct lpp_context_t *context,
+                                    struct lpp_image_t *image)
+{
+    /* delegate to device */
+    return context->device.group->device_eeprom_to_image(context, image);
+}
+
+/* read the image eeprom from the device */
+int lpp_read_image_to_device_eeprom(struct lpp_context_t *context,
+                                    struct lpp_image_t *image)
+{
+    /* delegate to device */
+    return context->device.group->image_to_device_eeprom(context, image);
+}
+

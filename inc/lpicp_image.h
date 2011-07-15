@@ -16,7 +16,8 @@
 #include "lpicp.h"
 
 /* max number of config bytes */
-#define LPP_MAX_CONFIG_BITS (32)
+#define LPP_MAX_EEPROM_BYTES (512)
+#define LPP_MAX_CONFIG_BYTES (32)
 
 /* image structure */
 struct lpp_image_t
@@ -24,14 +25,16 @@ struct lpp_image_t
     unsigned char    *contents;
     unsigned int    contents_size;                      /* used, in bytes */
     unsigned int    max_contents_size;                  /* allocated, in bytes */
-    unsigned char   config[LPP_MAX_CONFIG_BITS];        /* configuration bytes */
+    unsigned char   config[LPP_MAX_CONFIG_BYTES];       /* configuration bytes */
     unsigned int    config_valid;                       /* which config bytes are valid */
+    unsigned char   eeprom[LPP_MAX_EEPROM_BYTES];       /* eeprom */  
+    unsigned int    eeprom_size;                        /* used, in bytes */
 };
 
 /* initialize an image */
 int lpp_image_init(struct lpp_context_t *context, 
                    struct lpp_image_t *image,
-                   const unsigned int max_size);
+                   const unsigned int max_content_size);
 
 /* destroy an image */
 int lpp_image_destroy(struct lpp_context_t *context, 

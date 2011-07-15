@@ -22,6 +22,11 @@ struct lpp_image_t;
 #define LPP_REG_TBLPTRU (0xF8)
 #define LPP_REG_TBLPTRH (0xF7)
 #define LPP_REG_TBLPTRL (0xF6)
+#define LPP_REG_TABLAT  (0xF5)
+#define LPP_REG_EEDATA  (0xA8)
+#define LPP_REG_EEADR   (0xA9)
+#define LPP_REG_EEADRH  (0xAA)
+#define LPP_REG_EECON2  (0xA7)
 
 /* PIC opcodes */
 #define LPP_OP_MOVLW(value)                 ((0x0E << 8) | (value))
@@ -29,12 +34,19 @@ struct lpp_image_t;
 #define LPP_OP_NOP                          (0x0)
 #define LPP_SET_EEPGD                       (0x8EA6)
 #define LPP_SET_CFGS                        (0x8CA6)
+#define LPP_CLR_EEPGD                       (0x9EA6)
 #define LPP_CLR_CFGS                        (0x9CA6)
 #define LPP_SET_WREN                        (0x86A6)
 #define LPP_SET_FREE                        (0x88A6)
 #define LPP_INC_TBLPTRL                     (0x2AF6)
 #define LPP_SET_PC_100K_0                   (0xEF00)
 #define LPP_SET_PC_100K_1                   (0xF800)
+#define LPP_MOVF_EEDATA_W                   (0x50A8)
+#define LPP_MOVF_EECON1_W                   (0x50A6)
+#define LPP_SET_EECON1_RD                   (0x80A6)
+#define LPP_SET_EECON1_WREN                 (0x84A6)
+#define LPP_CLR_EECON1_WREN                 (0x94A6)
+#define LPP_SET_EECON1_WR                   (0x82A6)
 
 /* ICSP commands */
 #define LPP_ICSP_CMD_CORE_INST              (0x0) // 0000

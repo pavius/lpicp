@@ -17,23 +17,39 @@
 /* initialize an image */
 int lpp_image_init(struct lpp_context_t *context, 
                    struct lpp_image_t *image,
-                   const unsigned int max_size)
+                   const unsigned int max_content_size)
 {
     /* zero out the image */
     memset(image, 0, sizeof(struct lpp_image_t));
 
     /* allocate contents */
-    image->contents = malloc(max_size);
+    image->contents = malloc(max_content_size);
     
     /* check allocation */
     if (image->contents != NULL)
     {
-        /* init buffer */
-        memset(image->contents, 0xFF, max_size);
+        /* init buffers */
+        memset(image->contents, 0xFF, max_content_size);
 
         /* save sizes */
-        image->max_contents_size = max_size;
+        image->max_contents_size = max_content_size;
     }
+    else
+    {
+        /* failed */
+        goto err_alloc_contents;
+    }
+
+    /* zero out eeprom/configs */
+    memset(image->config, 0xFF, sizeof(image->config));
+    memset(image->eeprom, 0xFF, sizeof(image->eeprom));
+
+    /* success */
+    return 1;
+
+    /* failed */
+err_alloc_contents:
+    return 0;
 }
 
 /* destroy an image */
@@ -49,6 +65,9 @@ int lpp_image_destroy(struct lpp_context_t *context,
 
     /* zero out the image */
     memset(image, 0, sizeof(struct lpp_image_t));
+
+    /* success */
+    return 1;
 }
 
 /* record to big endian */
@@ -105,8 +124,8 @@ int lpp_image_read_handle_data_record(struct lpp_context_t *context,
         if (write_end_address > image->contents_size) 
             image->contents_size = write_end_address;
     }
-    /* config space. TODO: make device unspecific */
-    else if (address_ext == 0x3000)
+    /* config space */
+    else if (address_ext == (context->device.config_address >> 8))
     {
         /* write to configuration */
         if ((hex_record->address + hex_record->dataLen) <= sizeof(image->config))
@@ -126,6 +145,22 @@ int lpp_image_read_handle_data_record(struct lpp_context_t *context,
                 /* set appropriate byte valid bit */
                 image->config_valid |= (1 << valid_byte_idx);
             }
+        }
+        /* can't store this, not supported */
+        else goto err_not_enough_space;
+    }
+    /* eeprom space */
+    else if (address_ext == (context->device.eeprom_address >> 8))
+    {
+        /* write to configuration */
+        if ((hex_record->address + hex_record->dataLen) <= sizeof(image->eeprom))
+        {
+            unsigned int valid_byte_idx;
+
+            /* copy eeprom to offset */
+            memcpy(&image->eeprom[hex_record->address], 
+                   hex_record->data,
+                   hex_record->dataLen);
         }
         /* can't store this, not supported */
         else goto err_not_enough_space;
@@ -233,8 +268,11 @@ int lpp_image_write_to_file(struct lpp_context_t *context,
 int lpp_image_print(struct lpp_context_t *context, 
                     struct lpp_image_t *image)
 {
-    unsigned int byte_idx, row_address, config_byte_idx;
+    unsigned int byte_idx, row_address, config_byte_idx, eeprom_byte_idx;
     const unsigned int row_byte_count = 16;
+
+    /* space out */
+    printf("\nProgram:");
 
     /* iterate through the bytes */
     for (row_address = 0, byte_idx = 0; 
@@ -256,19 +294,41 @@ int lpp_image_print(struct lpp_context_t *context,
     }
 
     /* space out */
-    printf("\n.\n");
+    printf("\n\nConfiguration:\n");
 
     /* print configuration bytes */
     for (config_byte_idx = 0;
-          config_byte_idx < LPP_MAX_CONFIG_BITS;
+          config_byte_idx < context->device.config_bytes;
           ++config_byte_idx)
     {
         /* is the byte valid? */
         if (image->config_valid & (1 << config_byte_idx))
         {
             /* print config byte */
-            printf("CFG%02X: %02X\n", config_byte_idx, image->config[config_byte_idx]);
+            printf("[%04X] %02X\n", config_byte_idx, image->config[config_byte_idx]);
         }
+    }
+
+    /* space out */
+    printf("\nEEPROM:");
+
+    /* print eeprom */
+    for (row_address = 0, eeprom_byte_idx = 0;
+          eeprom_byte_idx < context->device.eeprom_bytes;
+          ++eeprom_byte_idx)
+    {
+        /* starting new row? */
+        if ((eeprom_byte_idx & (row_byte_count - 1)) == 0)
+        {
+            /* row header */
+            printf("\n[%04X] ", row_address);
+
+            /* next address */
+            row_address += row_byte_count;
+        }
+
+        /* print the byte */
+        printf("%02X", image->eeprom[eeprom_byte_idx]);
     }
 
     /* done */

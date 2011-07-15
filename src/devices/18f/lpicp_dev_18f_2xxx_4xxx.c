@@ -16,7 +16,7 @@
 #include "lpicp_image.h"
 
 /* initialize */
-int lpp_device_18f2xxx_4xxx_bulk_open(struct lpp_context_t *context)
+int lpp_device_18f2xxx_4xxx_open(struct lpp_context_t *context)
 {
     /* set device info */
     context->device.code_words_per_write    = 16;
@@ -155,7 +155,7 @@ int lpp_device_18f2xxx_4xxx_image_to_device_program(struct lpp_context_t *contex
 /* operations */
 struct lpp_device_group_t lpp_device_18f2xxx_4xxx = 
 {
-    .open                       = lpp_device_18f2xxx_4xxx_bulk_open,
+    .open                       = lpp_device_18f2xxx_4xxx_open,
     .bulk_erase                 = lpp_device_18f2xxx_4xxx_bulk_erase,
     .image_to_device_program    = lpp_device_18f2xxx_4xxx_image_to_device_program,
     .image_to_device_config     = lpp_device_18f2xxx_4xxx_image_to_device_config,
