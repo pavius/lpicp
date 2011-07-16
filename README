@@ -1,30 +1,40 @@
 lpicp: The embedded Linux PIC programmer
 Copyright (c) 2011 Eran Duchan <pavius@gmail.com>
+http://www.pavius.net/2011/06/lpicp-the-embedded-linux-pic-programmer
+
 ---------------------------------------------------------------------
 This program is free software; you can redistribute  it and/or modify
 it under the terms of the GNU General Public License, version 2, as
 published by the Free Software Foundation.
 ---------------------------------------------------------------------
 
-== About ==
-In its current form, supports reading, erasing and writing program and config memory 
-for the following devices:
-- PIC18F452
-- PIC18F4520
+:: About
+lpicp allows reading/writing/erasing the program, configuration and eeprom memory of
+PIC devices from an embedded Linux environment. It allows you to turn any board running
+embedded Linux with 4 spare GPIOs into a PIC programmer.
 
-See the following page to download the ICSP kernel driver and a bit of documentation:
-http://www.pavius.net/2011/06/lpicp-the-embedded-linux-pic-programmer/
+lpicp currently only supports a small set of PIC devices (PIC18F2xx/4xx and PIC18F2xxx/4xxx) 
+but is extendable in such a way that keeps all device-specific code in device-specific modules 
+(e.g lpicp_dev_18f_2xx_4xx.c). As more devices are supported, the shared code will undoubtedly 
+change but will still atempt to eliminate the zillion "if (device == DEV_ID) {} else {}" that 
+plague so many PIC programmers.
 
-== Compiling ==
-The build environment supports both running on x86 (without the ICSP driver) and ppc. 
+lpicp requires a custom ICSP kernel driver compiled into the kernel and instantiated with:
+> mknod /dev/icsp0 c 245 0
 
-To compile for ppc:
+:: More info and kernel driver
+http://www.pavius.net/2011/06/lpicp-the-embedded-linux-pic-programmer
+
+:: Compiling
+The build environment supports both running on x86 (for testing purposes, without the ICSP
+driver) and ppc, but more support can be added as needed by writing a cmake script.
+
+To compile debug load for ppc:
 - cd to build/ppc/debug
 - cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../tc-eldk-ppc-8xx.cmake -DCMAKE_BUILD_TYPE=Debug
 - make
 
-== Not implemented yet ==
-- Read/Program EEPROM
+:: For future versions
 - Program at offset/selective program
-- Read to HEX record
+- Dump from device to HEX file (currently only prints the data to stdout)
 
