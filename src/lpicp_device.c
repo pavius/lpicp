@@ -34,8 +34,6 @@ int lpp_device_id_read(struct lpp_context_t *context, unsigned short *device_id)
 int lpp_device_init_by_family(struct lpp_context_t *context, 
                               const enum lpp_device_family_type_t family)
 {
-    unsigned short device_id;
-
     /* by family */
     if (family == LPP_DEVICE_FAMILY_18F)
     {

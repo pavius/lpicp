@@ -10,10 +10,14 @@
  *
  */
 
+#include <unistd.h>
 #include "lpicp.h"
 #include "lpicp_device.h"
 #include "lpicp_icsp.h"
 #include "lpicp_image.h"
+
+/* start writing to code memory */
+int lpp_device_18f2xx_4xx_code_write_start(struct lpp_context_t *context);
 
 /* initialize */
 int lpp_device_18f2xxx_4xxx_open(struct lpp_context_t *context)
@@ -21,6 +25,9 @@ int lpp_device_18f2xxx_4xxx_open(struct lpp_context_t *context)
     /* set device info */
     context->device.code_words_per_write    = 16;
     context->device.code_memory_size        = 64 * 1024;
+
+    /* success */ 
+    return 0;
 }
 
 /* perform bulk erase */
@@ -85,7 +92,7 @@ int lpp_device_18f2xxx_4xxx_image_to_device_program(struct lpp_context_t *contex
 {
     int ret;
     unsigned int words_left, words_to_write, word_index;
-    unsigned short current_address, *current_data, data_to_write;
+    unsigned short current_address, *current_data;
 
     /* point to start data */
     current_data = (unsigned short *)image->contents;

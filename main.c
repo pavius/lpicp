@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <getopt.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include "lpicp.h"
 #include "lpicp_log.h"
@@ -56,6 +58,19 @@ void lpicp_main_init_default_config(struct lpp_config_t *config)
     config->opmode = LPICP_OPMODE_UNDEFINED;
     config->offset = 0;
     config->size = 0;
+}
+
+/* before each operation */
+int lpicp_progress_init(const char *current_operation)
+{
+    /* zero out the progress */
+    lpicp_progress_current_bytes = 0;
+
+    /* save opname */
+    lpicp_progress_current_operation = current_operation;
+
+    /* success */
+    return 1;
 }
 
 /* print usage */
@@ -184,7 +199,7 @@ int lpicp_main_parse_args_to_config(int argc, char *argv[], struct lpp_config_t 
             case 's':
             {
                 /* save size */
-                if (!lpicp_parse_numeric(optarg, &config->size))
+                if (!lpicp_parse_numeric(optarg, (int *)&config->size))
                 {
                     /* handle error */
                 }
@@ -341,7 +356,7 @@ int lpicp_main_execute_image_write(struct lpp_context_t *context,
             lpp_image_print(context, &verify_image);
 #endif    
             /* return compare result */
-            ret = (cmp_result == 0);
+            ret = (cmp_result);
         }
     }
     else
@@ -384,8 +399,7 @@ int lpicp_main_execute_image_read(struct lpp_context_t *context,
         if (lpicp_progress_init("Reading")                              && 
             lpp_read_device_program_to_image(context, 0, size, &image)  &&
             lpp_read_device_config_to_image(context, &image)            &&
-            lpp_read_device_eeprom_to_image(context, &image)            &&
-            lpp_image_write_to_file(context, &image, config->file_name))
+            lpp_read_device_eeprom_to_image(context, &image))
         {
             /* print image */
             lpp_image_print(context, &image);
@@ -415,19 +429,6 @@ err_init_image:
     return ret;
 }
 
-/* before each operation */
-int lpicp_progress_init(const char *current_operation)
-{
-    /* zero out the progress */
-    lpicp_progress_current_bytes = 0;
-
-    /* save opname */
-    lpicp_progress_current_operation = current_operation;
-
-    /* success */
-    return 1;
-}
-
 /* show progress */
 int lpicp_progress_show(struct lpp_context_t *context, 
                         const unsigned int current_bytes, 
@@ -445,6 +446,9 @@ int lpicp_progress_show(struct lpp_context_t *context,
         /* save printed bytes mark */
         lpicp_progress_current_bytes = current_bytes;
     }
+
+    /* success */
+    return 1;
 }
 
 /* parse arguments to configuration */
@@ -502,6 +506,11 @@ int lpicp_main_execute_config(struct lpp_config_t *config)
             /* read device-id */
             case LPICP_OPMODE_GET_DEVID: 
                 ret = lpicp_main_execute_read_devid(&context, config); 
+                break;
+
+            /* unknown */
+            case LPICP_OPMODE_UNDEFINED:
+                ret = 0;
                 break;
         }
 

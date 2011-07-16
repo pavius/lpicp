@@ -10,13 +10,14 @@
  *
  */
 
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
 #include "lpicp.h"
 #include "lpicp_log.h"
 #include "lpicp_icsp.h"
 #include "lpicp_image.h"
 #include "lpicp_device.h"
-#include <string.h>
-#include <stdlib.h>
 
 /* initialize a context */
 int lpp_context_init(struct lpp_context_t *context,
@@ -99,50 +100,6 @@ int lpp_read_16(struct lpp_context_t *context,
 
     /* return result */
     return ret;
-}
-
-/* perform bulk erase */
-int lpp_bulk_erase(struct lpp_context_t *context)
-{
-    int ret;
-    
-    /* delegate to device */
-    ret = context->device.group->bulk_erase(context);
-
-    /* if success, wait */
-    if (ret) usleep(20);
-
-    /* return result */
-    return ret;
-}
-
-/* perform bulk erase */
-int lpp_non_bulk_erase(struct lpp_context_t *context)
-{
-    int ret;
-    
-    /* delegate to device */
-    ret = context->device.group->non_bulk_erase(context);
-
-    /* if success, wait */
-    if (ret) usleep(20);
-
-    /* return result */
-    return ret;
-}
-
-/* write an image to the device */
-int lpp_write_image_to_device_program(struct lpp_context_t *context, struct lpp_image_t *image)
-{
-    /* delegate to device */
-    return context->device.group->image_to_device_program(context, image);
-}
-
-/* write an image to the device config */
-int lpp_write_image_to_device_config(struct lpp_context_t *context, struct lpp_image_t *image)
-{
-    /* delegate to device */
-    return context->device.group->image_to_device_config(context, image);
 }
 
 /* read the image program from the device */
@@ -249,4 +206,49 @@ int lpp_read_image_to_device_eeprom(struct lpp_context_t *context,
     /* delegate to device */
     return context->device.group->image_to_device_eeprom(context, image);
 }
+
+/* write an image to the device */
+int lpp_write_image_to_device_program(struct lpp_context_t *context, struct lpp_image_t *image)
+{
+    /* delegate to device */
+    return context->device.group->image_to_device_program(context, image);
+}
+
+/* write an image to the device config */
+int lpp_write_image_to_device_config(struct lpp_context_t *context, struct lpp_image_t *image)
+{
+    /* delegate to device */
+    return context->device.group->image_to_device_config(context, image);
+}
+
+/* perform bulk erase */
+int lpp_bulk_erase(struct lpp_context_t *context)
+{
+    int ret;
+    
+    /* delegate to device */
+    ret = context->device.group->bulk_erase(context);
+
+    /* if success, wait */
+    if (ret) usleep(20);
+
+    /* return result */
+    return ret;
+}
+
+/* perform bulk erase */
+int lpp_non_bulk_erase(struct lpp_context_t *context)
+{
+    int ret;
+    
+    /* delegate to device */
+    ret = context->device.group->non_bulk_erase(context);
+
+    /* if success, wait */
+    if (ret) usleep(20);
+
+    /* return result */
+    return ret;
+}
+
 

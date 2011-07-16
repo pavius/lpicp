@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/ioctl.h>
 #include "lpicp_icsp.h"
 #include "lpicp_log.h"
@@ -70,7 +71,7 @@ int lpp_icsp_write_16(struct lpp_context_t *context,
                       const unsigned char command, 
                       const unsigned short data)
 {
-    unsigned int xfer_command = 0, ret;
+    unsigned int xfer_command = 0;
 
     /* log write, if applicable */
     lpp_log_command(context, command, data);

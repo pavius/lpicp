@@ -10,12 +10,15 @@
  *
  */
 
+#include <unistd.h>
 #include "lpicp.h"
 #include "lpicp_device.h"
 #include "lpicp_icsp.h"
 #include "lpicp_image.h"
 
-#include <stdio.h>
+/* forward declarations */
+int lpp_device_18f2xxx_4xxx_image_to_device_program(struct lpp_context_t *context, 
+                                                    struct lpp_image_t *image);
 
 /* initialize the device by id */
 int lpp_device_18f2xx_4xx_open(struct lpp_context_t *context)
@@ -75,6 +78,15 @@ int lpp_device_18f2xx_4xx_bulk_erase(struct lpp_context_t *context)
 
     /* failed for some reason */
     return 0;
+}
+
+/* start writing to config memory */
+int lpp_device_18f2xx_4xx_config_write_start(struct lpp_context_t *context)
+{
+    /* start programming */
+    return lpp_exec_instruction(context, LPP_SET_EEPGD)    &&
+            lpp_exec_instruction(context, LPP_SET_CFGS) &&
+            lpp_exec_instruction(context, LPP_SET_WREN);
 }
 
 /* perform erase chip without using bulk */
@@ -141,15 +153,6 @@ int lpp_device_18f2xx_4xx_code_write_start(struct lpp_context_t *context)
     /* start programming */
     return lpp_exec_instruction(context, LPP_SET_EEPGD)    && 
             lpp_exec_instruction(context, LPP_CLR_CFGS);
-}
-
-/* start writing to config memory */
-int lpp_device_18f2xx_4xx_config_write_start(struct lpp_context_t *context)
-{
-    /* start programming */
-    return lpp_exec_instruction(context, LPP_SET_EEPGD)    &&
-            lpp_exec_instruction(context, LPP_SET_CFGS) &&
-            lpp_exec_instruction(context, LPP_SET_WREN);
 }
 
 /* burn the image to the device */
@@ -269,6 +272,9 @@ int lpp_device_18f2xx_4xx_device_eeprom_to_image(struct lpp_context_t *context,
             }
         }
     }
+
+    /* return result */
+    return ret;
 }
 
 /* read the image to device  */

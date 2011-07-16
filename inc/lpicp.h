@@ -101,6 +101,12 @@ int lpp_write_image_to_device_program(struct lpp_context_t *context, struct lpp_
 /* write an image to the device config */
 int lpp_write_image_to_device_config(struct lpp_context_t *context, struct lpp_image_t *image);
 
+/* write an image to device eeprom */ 
+int lpp_read_image_to_device_eeprom(struct lpp_context_t *context, struct lpp_image_t *image);
+
+/* read the image from the device eeprom */
+int lpp_read_device_eeprom_to_image(struct lpp_context_t *context, struct lpp_image_t *image);
+
 /* read the image from the device */
 int lpp_read_device_program_to_image(struct lpp_context_t *context, 
                                      const unsigned int offset,

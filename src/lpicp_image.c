@@ -155,8 +155,6 @@ int lpp_image_read_handle_data_record(struct lpp_context_t *context,
         /* write to configuration */
         if ((hex_record->address + hex_record->dataLen) <= sizeof(image->eeprom))
         {
-            unsigned int valid_byte_idx;
-
             /* copy eeprom to offset */
             memcpy(&image->eeprom[hex_record->address], 
                    hex_record->data,
@@ -262,6 +260,7 @@ int lpp_image_write_to_file(struct lpp_context_t *context,
                              const char *file_name)
 {
     /* TODO */
+    return 0;
 }
 
 /* print an image to stdout */
@@ -333,5 +332,8 @@ int lpp_image_print(struct lpp_context_t *context,
 
     /* done */
     printf("\n");
+
+    /* success */
+    return 1;
 }
 
